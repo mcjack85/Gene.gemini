@@ -1,0 +1,21 @@
+# Render Blueprint — 가장 쉬운 무료 배포 경로
+# 사용법: GitHub에 올린 뒤 render.com > New > Blueprint 에서 이 저장소 선택.
+# (환경변수 GEMINI_API_KEY 등은 Render 대시보드에서 입력 — 코드에 넣지 않음)
+services:
+  - type: web
+    name: gene-platform
+    runtime: node
+    rootDir: server          # server 폴더를 앱 루트로 (정적 ../public 도 함께 서빙)
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # 대시보드에서 직접 입력 (비밀값)
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: SUPABASE_URL
+        sync: false          # 2단계(로그인) 쓸 때만 입력
+      - key: SUPABASE_ANON_KEY
+        sync: false

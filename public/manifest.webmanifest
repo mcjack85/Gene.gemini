@@ -1,0 +1,17 @@
+{
+  "name": "유전자 검사 변이 분석기",
+  "short_name": "유전자 분석기",
+  "description": "유전자 변이 3단계 체크 후 AI(Gemini) 종합 상담 리포트를 생성하는 상담사용 플랫폼",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f5f9",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
