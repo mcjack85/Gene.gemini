@@ -14,7 +14,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false          # 대시보드에서 직접 입력 (비밀값)
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: gemini-3.6-flash
       - key: SUPABASE_URL
         sync: false          # 2단계(로그인) 쓸 때만 입력
       - key: SUPABASE_ANON_KEY
