@@ -432,9 +432,14 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
 
         <!-- 등록 상품 목록 -->
         <div>
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
             <h4 class="text-sm font-bold text-slate-900">등록된 상품 <span id="product-count" class="text-emerald-700">0</span>개</h4>
-            <button id="btn-clear-products" class="text-xs text-rose-500 hover:text-rose-700">전체 삭제</button>
+            <div class="flex items-center gap-2">
+              <button id="btn-export-products" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold border border-slate-300">백업 내보내기</button>
+              <button id="btn-import-products" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold border border-slate-300">불러오기</button>
+              <input type="file" id="import-file" accept=".json" class="hidden">
+              <button id="btn-clear-products" class="text-xs text-rose-500 hover:text-rose-700">전체 삭제</button>
+            </div>
           </div>
           <div id="products-list" class="space-y-2"></div>
         </div>
@@ -1780,6 +1785,53 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       XLSX.writeFile(wb, "보험상품_업로드_양식.xlsx");
     }
 
+    // 상품 목록 백업(JSON 내보내기) — 기기 이동/데이터 손실 대비
+    function exportProducts() {
+      const list = loadProducts();
+      if (list.length === 0) { alert("내보낼 상품이 없습니다."); return; }
+      const blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = new Date();
+      a.href = url;
+      a.download = `보험상품_백업_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 백업(JSON) 불러오기 — 기존 목록에 병합
+    function importProductsFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const incoming = JSON.parse(e.target.result);
+          if (!Array.isArray(incoming)) throw new Error("형식이 올바르지 않습니다.");
+          const cur = loadProducts();
+          const existingIds = new Set(cur.map(p => p.id));
+          let added = 0;
+          incoming.forEach(p => {
+            if (!p || typeof p !== "object") return;
+            const item = {
+              id: (p.id && !existingIds.has(p.id)) ? p.id : ("p"+Date.now()+Math.random().toString(36).slice(2,6)),
+              insurer: String(p.insurer||"").trim(),
+              name: String(p.name||"").trim(),
+              coverages: Array.isArray(p.coverages) ? p.coverages : parseCoverageTokens(p.coverages||""),
+              payment: String(p.payment||"").trim(),
+              amount: String(p.amount||"").trim(),
+              note: String(p.note||"").trim()
+            };
+            cur.push(item); added++;
+          });
+          saveProducts(cur);
+          renderProductsList();
+          alert(`${added}개 상품을 불러왔습니다. (기존 목록에 추가)`);
+        } catch (err) {
+          alert("불러오기 실패: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
     function setupEvents() {
       // 카테고리 필터
       document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -1982,6 +2034,16 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       if (btnDownloadTpl) btnDownloadTpl.addEventListener("click", downloadTemplate);
       if (productFile) productFile.addEventListener("change", (e) => {
         if (e.target.files && e.target.files[0]) { handleProductFile(e.target.files[0]); e.target.value = ""; }
+      });
+
+      // 백업 내보내기 / 불러오기
+      const btnExport = document.getElementById("btn-export-products");
+      const btnImport = document.getElementById("btn-import-products");
+      const importFile = document.getElementById("import-file");
+      if (btnExport) btnExport.addEventListener("click", exportProducts);
+      if (btnImport && importFile) btnImport.addEventListener("click", () => importFile.click());
+      if (importFile) importFile.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) { importProductsFile(e.target.files[0]); e.target.value = ""; }
       });
 
       if (btnOpenMatch) btnOpenMatch.addEventListener("click", () => {
