@@ -19,6 +19,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
   <!-- 로그인 + 상담사별 DB (Supabase). config.js 비우면 자동 폴백 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <!-- 보험 상품 엑셀/CSV 업로드 파싱 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -65,6 +67,14 @@
       </div>
       
       <div class="flex items-center gap-2">
+        <!-- 보험 상품 관리 -->
+        <button id="btn-open-products" class="text-xs sm:text-sm px-3 py-1.5 bg-emerald-50 text-emerald-900 font-semibold rounded-lg hover:bg-emerald-100 transition border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+          <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="hidden sm:inline">보험상품 관리</span>
+          <span class="sm:hidden">상품</span>
+        </button>
         <!-- 상담기록 (로그인 시 노출) -->
         <button id="btn-open-records" class="hidden text-xs sm:text-sm px-3 py-1.5 bg-indigo-50 text-indigo-900 font-semibold rounded-lg hover:bg-indigo-100 transition border border-indigo-300 items-center gap-1.5 shadow-sm">
           <svg class="w-4 h-4 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,8 +273,15 @@
             </button>
           </div>
 
+          <button id="btn-open-match" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
+            </svg>
+            <span>변이 맞춤 보험상품 매칭 보기</span>
+          </button>
+
           <p class="text-[11px] text-slate-400 text-center leading-relaxed">
-            ※ 본 결과는 의학적 진단이 아닌 <strong>건강관리 참고용</strong>이며, 유전정보는 민감정보로 안전하게 처리됩니다.
+            ※ 본 결과는 의학적 진단이 아닌 <strong>건강관리 참고용</strong>이며, 보험 추천은 등록된 상담사의 최종 판단을 돕는 참고 자료입니다.
           </p>
         </div>
       </div>
@@ -366,6 +383,76 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
         <button id="btn-close-records" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
       </div>
       <div id="records-list" class="p-4 overflow-y-auto space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- 보험상품 관리 모달 -->
+  <div id="products-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-emerald-700 text-white flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold">보험상품 관리 (여러 보험사)</h3>
+          <p class="text-xs text-emerald-100 mt-0.5">실제 취급 상품을 등록하면 변이 프로필에 맞춰 매칭됩니다. (가짜 상품은 생성하지 않습니다)</p>
+        </div>
+        <button id="btn-close-products" class="text-emerald-200 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-5">
+        <!-- 업로드/추가 영역 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <h4 class="text-sm font-bold text-slate-900 mb-2">엑셀/CSV 업로드</h4>
+            <p class="text-xs text-slate-500 mb-2.5">열: <code class="bg-white px-1 rounded border">보험사 · 상품명 · 담보유형 · 납입조건 · 권장가입금액 · 비고</code></p>
+            <input type="file" id="product-file" accept=".xlsx,.xls,.csv" class="block w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:text-white file:text-xs file:font-semibold hover:file:bg-emerald-700 cursor-pointer">
+            <button id="btn-download-template" class="mt-2.5 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline">양식(템플릿) 내려받기</button>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <h4 class="text-sm font-bold text-slate-900 mb-2">직접 추가</h4>
+            <div class="space-y-1.5">
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="p-insurer" placeholder="보험사" class="text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                <input id="p-name" placeholder="상품명" class="text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+              </div>
+              <input id="p-coverages" placeholder="담보유형 (예: 일반암, 표적항암, 뇌혈관, 수술비)" class="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="p-payment" placeholder="납입조건 (예: 20년납 비갱신)" class="text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                <input id="p-amount" placeholder="권장가입금액" class="text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+              </div>
+              <button id="btn-add-product" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">추가</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 담보 키워드 안내 -->
+        <details class="text-xs text-slate-500">
+          <summary class="cursor-pointer font-semibold text-slate-600">인식되는 담보 키워드 보기</summary>
+          <p class="mt-1.5 leading-relaxed">일반암/통합암 · 표적항암/항암치료 · 유사암/소액암 · 뇌혈관/뇌졸중 · 허혈성심장/심근경색 · 치매/간병(LTC) · 당뇨/대사 · 수술비 · 입원비 · 간질환 — 담보유형 칸에 이 단어들이 포함되면 자동 분류됩니다.</p>
+        </details>
+
+        <!-- 등록 상품 목록 -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-bold text-slate-900">등록된 상품 <span id="product-count" class="text-emerald-700">0</span>개</h4>
+            <button id="btn-clear-products" class="text-xs text-rose-500 hover:text-rose-700">전체 삭제</button>
+          </div>
+          <div id="products-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보험 매칭 결과 모달 -->
+  <div id="match-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold">변이 맞춤 보험상품 매칭</h3>
+          <p class="text-xs text-slate-300 mt-0.5">현재 체크된 변이에서 필요한 담보를 도출해, 등록된 실제 상품을 점수순으로 보여줍니다.</p>
+        </div>
+        <button id="btn-close-match" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+      <div id="match-content" class="p-5 overflow-y-auto space-y-4 text-sm"></div>
     </div>
   </div>
 
@@ -972,8 +1059,25 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       }
 
       if (incInsurance) {
+        const m = matchProducts();
         prompt += `5. **유전자 변이 기반 맞춤 보험 설계 포트폴리오**\n`;
-        prompt += `   - 20년납 비갱신형 종합건강보험 기준 추천 담보(통합 일반암, 표적항암, 뇌혈관·허혈성심장질환, 2대 산정특례, 질병 수술비 등)와 권장 가입금액 및 유전자 맞춤 설계 이유를 표로 구성.\n`;
+        prompt += `   - 변이에서 도출된 우선 필요 담보: ${m.neededCats.map(c => COVERAGE_CATEGORIES[c]).join(", ") || "없음"}\n`;
+
+        if (m.scored.length > 0) {
+          // 등록된 실제 상품을 근거로 제공 (지어내기 금지)
+          prompt += `   - 아래는 상담사가 등록한 "실제 취급 상품" 목록입니다. 반드시 이 목록 안에서만 추천하고, 목록에 없는 상품명·보험료·수치는 절대 지어내지 마세요.\n`;
+          prompt += `   [등록 상품 후보 (적합도 높은 순)]\n`;
+          m.scored.slice(0, 8).forEach((p, i) => {
+            prompt += `     ${i+1}. ${p.insurer || ""} / ${p.name || ""} — 커버 담보: ${p.covered.map(c => COVERAGE_CATEGORIES[c]).join(", ")}${p.payment ? " / " + p.payment : ""}${p.amount ? " / 권장 " + p.amount : ""}\n`;
+          });
+          if (m.gaps.length > 0) {
+            prompt += `   - 미충족 담보(등록 상품으로 커버 안 됨): ${m.gaps.map(c => COVERAGE_CATEGORIES[c]).join(", ")} → 이 빈틈을 명확히 안내.\n`;
+          }
+          prompt += `   - 위 등록 상품을 고객 변이 프로필에 맞춰 "왜 적합한지"를 마크다운 표(보험사·상품명·커버 담보·추천 이유)로 정리. 등록 목록 밖 상품은 언급 금지.\n`;
+        } else {
+          // 등록 상품이 없으면 일반 담보 유형 가이드 (특정 상품명 금지)
+          prompt += `   - (등록된 실제 상품이 없으므로) 특정 상품명 없이, 필요한 "담보 유형"과 권장 가입금액 방향만 표로 제시. 실제 상품명·보험료는 지어내지 말 것.\n`;
+        }
         prompt += `   - 고객 대면 상담 시 불안을 덜어주고 신뢰를 주는 핵심 화법 팁 포함.\n`;
       }
 
@@ -1435,6 +1539,247 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       }
     }
 
+    // ════════════════════════════════════════════════════════════
+    //  보험 상품 매칭 모듈
+    // ════════════════════════════════════════════════════════════
+
+    // 담보 카테고리(표준) — 매칭의 기준
+    const COVERAGE_CATEGORIES = {
+      cancer_general:  "일반암 진단비",
+      cancer_targeted: "표적항암·항암치료비",
+      cancer_minor:    "유사암·소액암",
+      cerebro:         "뇌혈관질환 진단비",
+      cardiac:         "허혈성심장질환 진단비",
+      dementia:        "치매·간병(LTC)",
+      diabetes:        "당뇨·대사 관리",
+      surgery:         "질병 수술비",
+      hospital:        "질병 입원비",
+      liver:           "간질환 보장"
+    };
+
+    // 담보유형 텍스트 → 표준 카테고리 키 (키워드 매칭)
+    function parseCoverageTokens(text) {
+      if (!text) return [];
+      const keys = new Set();
+      const tokens = String(text).split(/[,/·|;\n]+/).map(t => t.trim()).filter(Boolean);
+      tokens.forEach(raw => {
+        const t = raw.replace(/\s/g, "");
+        if (/(표적|항암치료|항암)/.test(t)) keys.add("cancer_targeted");
+        else if (/(유사암|소액암|갑상선암|제자리암|경계성)/.test(t)) keys.add("cancer_minor");
+        else if (/암/.test(t)) keys.add("cancer_general");
+        if (/(뇌혈관|뇌졸중|뇌출혈|뇌경색)/.test(t)) keys.add("cerebro");
+        if (/(허혈|심장|심근경색|협심증)/.test(t)) keys.add("cardiac");
+        if (/(치매|간병|장기요양|LTC|요양)/i.test(t)) keys.add("dementia");
+        if (/(당뇨|대사)/.test(t)) keys.add("diabetes");
+        if (/(수술)/.test(t)) keys.add("surgery");
+        if (/(입원)/.test(t)) keys.add("hospital");
+        if (/(간질환|간경화|간암|간부전|간이식)/.test(t)) keys.add("liver");
+      });
+      return [...keys];
+    }
+
+    // 변이 유전자 → 필요한 담보 카테고리 (가중치: 동형2, 이형1)
+    function computeCoverageNeeds() {
+      const needs = {}; // key -> score
+      function add(cat, w) { needs[cat] = (needs[cat] || 0) + w; }
+      GENE_DATABASE.forEach(gene => {
+        const lvl = currentSelectedLevels[gene.id];
+        if (lvl !== "HETERO" && lvl !== "HOMO") return;
+        const w = lvl === "HOMO" ? 2 : 1;
+        const id = gene.id.toUpperCase();
+        switch (gene.category) {
+          case "CANCER":
+            add("cancer_general", w); add("cancer_targeted", w); add("cancer_minor", Math.ceil(w/2)); add("surgery", Math.ceil(w/2));
+            break;
+          case "CARDIO":
+            add("cerebro", w); add("cardiac", w); add("surgery", Math.ceil(w/2));
+            break;
+          case "DETOX":
+            add("liver", w); add("surgery", Math.ceil(w/2)); add("hospital", Math.ceil(w/2));
+            break;
+          case "METABOLISM":
+            if (id.includes("APOE")) { add("dementia", w); add("hospital", Math.ceil(w/2)); }
+            else if (/(SLC30A8|KCNQ1|FABP2|ADIPOQ)/.test(id)) { add("diabetes", w); add("hospital", Math.ceil(w/2)); }
+            else add("hospital", w);
+            break;
+        }
+      });
+      return needs; // {cat: score}
+    }
+
+    // ── 상품 저장소 (localStorage; 로그인 시 Supabase 확장 예정) ──
+    const PRODUCTS_KEY = "insurance_products_v1";
+    function loadProducts() {
+      try { return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"); } catch { return []; }
+    }
+    function saveProducts(list) {
+      try { localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list)); } catch (e) { console.warn(e); }
+    }
+    function addProduct(p) {
+      const list = loadProducts();
+      list.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2,6), ...p });
+      saveProducts(list);
+    }
+
+    function renderProductsList() {
+      const list = loadProducts();
+      const box = document.getElementById("products-list");
+      document.getElementById("product-count").textContent = list.length;
+      if (!box) return;
+      if (list.length === 0) {
+        box.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">등록된 상품이 없습니다. 엑셀 업로드 또는 직접 추가하세요.</div>`;
+        return;
+      }
+      box.innerHTML = "";
+      list.forEach(p => {
+        const chips = (p.coverages || []).map(c => `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${COVERAGE_CATEGORIES[c] || c}</span>`).join(" ");
+        const row = document.createElement("div");
+        row.className = "p-3 rounded-xl border border-slate-200 flex items-start justify-between gap-3";
+        row.innerHTML = `
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-slate-500">${p.insurer || "-"}</span>
+              <span class="text-sm font-bold text-slate-900">${p.name || "(상품명 없음)"}</span>
+              ${p.payment ? `<span class="text-[10px] text-slate-400">${p.payment}</span>` : ""}
+            </div>
+            <div class="mt-1 flex flex-wrap gap-1">${chips || '<span class="text-[10px] text-rose-400">담보 인식 안 됨</span>'}</div>
+            ${p.amount ? `<p class="text-[11px] text-slate-400 mt-1">권장 가입금액: ${p.amount}</p>` : ""}
+          </div>
+          <button data-del="${p.id}" class="text-xs text-slate-400 hover:text-rose-600 shrink-0">삭제</button>`;
+        box.appendChild(row);
+      });
+      box.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+        saveProducts(loadProducts().filter(x => x.id !== b.dataset.del));
+        renderProductsList();
+      }));
+    }
+
+    // ── 매칭 + 결과 렌더 ──
+    function matchProducts() {
+      const needs = computeCoverageNeeds();
+      const neededCats = Object.keys(needs).sort((a,b) => needs[b] - needs[a]);
+      const products = loadProducts();
+      const scored = products.map(p => {
+        const covered = (p.coverages || []).filter(c => needs[c]);
+        const score = covered.reduce((s,c) => s + needs[c], 0);
+        return { ...p, covered, score };
+      }).filter(p => p.score > 0).sort((a,b) => b.score - a.score);
+      const coveredSet = new Set(scored.flatMap(p => p.covered));
+      const gaps = neededCats.filter(c => !coveredSet.has(c));
+      return { needs, neededCats, scored, gaps, totalProducts: products.length };
+    }
+
+    function renderMatch() {
+      const el = document.getElementById("match-content");
+      const { needs, neededCats, scored, gaps, totalProducts } = matchProducts();
+
+      if (neededCats.length === 0) {
+        el.innerHTML = `<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">감지된 변이가 없습니다. 유전자 상태를 먼저 체크하세요.</div>`;
+        return;
+      }
+
+      const needChips = neededCats.map(c =>
+        `<span class="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">${COVERAGE_CATEGORIES[c]} <span class="text-indigo-400">·${needs[c]}</span></span>`).join(" ");
+
+      let html = `
+        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+          <h4 class="text-sm font-bold text-indigo-950 mb-2">변이에서 도출된 필요 담보 (우선순위順)</h4>
+          <div class="flex flex-wrap gap-1.5">${needChips}</div>
+        </div>`;
+
+      if (totalProducts === 0) {
+        html += `<div class="p-5 text-center text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl">
+          등록된 보험상품이 없습니다. 상단 <strong>「보험상품 관리」</strong>에서 실제 상품을 먼저 등록하세요.</div>`;
+        el.innerHTML = html;
+        return;
+      }
+
+      if (scored.length === 0) {
+        html += `<div class="p-5 text-center text-sm text-slate-500 bg-slate-50 border rounded-xl">등록된 상품 중 이 변이 담보와 겹치는 상품이 없습니다.</div>`;
+      } else {
+        html += `<div class="space-y-2.5">`;
+        scored.forEach((p, i) => {
+          const maxScore = scored[0].score || 1;
+          const pct = Math.round((p.score / maxScore) * 100);
+          const coveredChips = p.covered.map(c => `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">${COVERAGE_CATEGORIES[c]}</span>`).join(" ");
+          html += `
+            <div class="p-3.5 rounded-xl border ${i===0?'border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/40':'border-slate-200'} ">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  ${i===0?'<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">BEST</span>':`<span class="text-[10px] font-bold text-slate-400">#${i+1}</span>`}
+                  <span class="text-xs font-bold text-slate-500">${p.insurer||'-'}</span>
+                  <span class="text-sm font-bold text-slate-900">${p.name||''}</span>
+                </div>
+                <span class="text-xs font-mono font-bold text-emerald-700">적합도 ${pct}%</span>
+              </div>
+              <div class="flex flex-wrap gap-1 mb-1">${coveredChips}</div>
+              ${p.payment||p.amount ? `<p class="text-[11px] text-slate-400">${[p.payment,p.amount?('권장 '+p.amount):''].filter(Boolean).join(' · ')}</p>`:''}
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (gaps.length > 0) {
+        const gapChips = gaps.map(c => `<span class="text-xs px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold">${COVERAGE_CATEGORIES[c]}</span>`).join(" ");
+        html += `
+          <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+            <h4 class="text-sm font-bold text-rose-900 mb-1.5">⚠ 미충족 담보 (등록 상품으로 커버 안 됨)</h4>
+            <div class="flex flex-wrap gap-1.5">${gapChips}</div>
+            <p class="text-[11px] text-rose-600 mt-2">이 담보를 포함하는 상품을 추가 등록하면 빈틈이 메워집니다.</p>
+          </div>`;
+      }
+
+      html += `<p class="text-[11px] text-slate-400 text-center pt-1">※ 본 매칭은 등록된 실제 상품에 한하며, 최종 가입 권유는 등록된 설계사의 판단과 책임하에 이루어져야 합니다.</p>`;
+      el.innerHTML = html;
+    }
+
+    // 엑셀/CSV 파싱
+    function handleProductFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array" });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+          let added = 0;
+          const list = loadProducts();
+          rows.forEach(r => {
+            // 열 이름 유연 매칭
+            const get = (keys) => { for (const k of Object.keys(r)) { if (keys.some(x => k.replace(/\s/g,"").includes(x))) return r[k]; } return ""; };
+            const insurer = get(["보험사","회사"]);
+            const name = get(["상품명","상품"]);
+            const covText = get(["담보"]);
+            const payment = get(["납입","조건"]);
+            const amount = get(["가입금액","권장","금액"]);
+            const note = get(["비고","메모"]);
+            if (!name && !insurer) return;
+            list.push({ id: "p"+Date.now()+Math.random().toString(36).slice(2,6), insurer:String(insurer).trim(), name:String(name).trim(), coverages: parseCoverageTokens(covText), payment:String(payment).trim(), amount:String(amount).trim(), note:String(note).trim() });
+            added++;
+          });
+          saveProducts(list);
+          renderProductsList();
+          alert(`${added}개 상품을 등록했습니다.`);
+        } catch (err) {
+          alert("파일을 읽지 못했습니다: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function downloadTemplate() {
+      const header = ["보험사","상품명","담보유형","납입조건","권장가입금액","비고"];
+      const sample = [
+        ["○○생명","간편가입 암보장보험","일반암, 표적항암, 유사암, 수술비","20년납 비갱신","암진단 5000만원","유병자 가입 가능"],
+        ["△△화재","뇌·심장 집중보장","뇌혈관, 허혈성심장, 수술비, 입원비","20년납 비갱신","진단 2000만원",""],
+        ["□□생명","치매·간병 플랜","치매, 간병(LTC), 입원비","20년납","중증치매 3000만원",""]
+      ];
+      const ws = XLSX.utils.aoa_to_sheet([header, ...sample]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "상품목록");
+      XLSX.writeFile(wb, "보험상품_업로드_양식.xlsx");
+    }
+
     function setupEvents() {
       // 카테고리 필터
       document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -1595,6 +1940,56 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       if (btnCloseRecords) btnCloseRecords.addEventListener("click", () =>
         document.getElementById("records-modal").classList.add("hidden"));
       if (btnSave) btnSave.addEventListener("click", saveConsultation);
+
+      // ── 보험상품 관리/매칭 이벤트 ──
+      const btnOpenProducts = document.getElementById("btn-open-products");
+      const btnCloseProducts = document.getElementById("btn-close-products");
+      const btnAddProduct = document.getElementById("btn-add-product");
+      const btnClearProducts = document.getElementById("btn-clear-products");
+      const btnDownloadTpl = document.getElementById("btn-download-template");
+      const productFile = document.getElementById("product-file");
+      const btnOpenMatch = document.getElementById("btn-open-match");
+      const btnCloseMatch = document.getElementById("btn-close-match");
+
+      if (btnOpenProducts) btnOpenProducts.addEventListener("click", () => {
+        document.getElementById("products-modal").classList.remove("hidden");
+        renderProductsList();
+      });
+      if (btnCloseProducts) btnCloseProducts.addEventListener("click", () =>
+        document.getElementById("products-modal").classList.add("hidden"));
+
+      if (btnAddProduct) btnAddProduct.addEventListener("click", () => {
+        const insurer = document.getElementById("p-insurer").value.trim();
+        const name = document.getElementById("p-name").value.trim();
+        const covText = document.getElementById("p-coverages").value.trim();
+        if (!name && !insurer) { alert("보험사 또는 상품명을 입력하세요."); return; }
+        addProduct({
+          insurer, name,
+          coverages: parseCoverageTokens(covText),
+          payment: document.getElementById("p-payment").value.trim(),
+          amount: document.getElementById("p-amount").value.trim(),
+          note: ""
+        });
+        ["p-insurer","p-name","p-coverages","p-payment","p-amount"].forEach(id => document.getElementById(id).value = "");
+        renderProductsList();
+      });
+
+      if (btnClearProducts) btnClearProducts.addEventListener("click", () => {
+        if (!confirm("등록된 상품을 모두 삭제할까요?")) return;
+        saveProducts([]); renderProductsList();
+      });
+
+      if (btnDownloadTpl) btnDownloadTpl.addEventListener("click", downloadTemplate);
+      if (productFile) productFile.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) { handleProductFile(e.target.files[0]); e.target.value = ""; }
+      });
+
+      if (btnOpenMatch) btnOpenMatch.addEventListener("click", () => {
+        document.getElementById("match-modal").classList.remove("hidden");
+        renderMatch();
+      });
+      if (btnCloseMatch) btnCloseMatch.addEventListener("click", () =>
+        document.getElementById("match-modal").classList.add("hidden"));
 
       if (closeSimBtn && simModal) closeSimBtn.addEventListener("click", () => simModal.classList.add("hidden"));
       if (copySimPromptBtn && simModal) {
