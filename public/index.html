@@ -60,13 +60,18 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">유전자 검사 변이 분석기</h1>
-            <span class="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">즉시 실행 모드</span>
+            <span id="gender-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-pink-100 text-pink-700 border-pink-200">여성 검사 모드</span>
           </div>
-          <p class="text-xs text-slate-500">3단계 변이 체크 (정상 / 이형접합 / 동형접합) · 실시간 리포트 시뮬레이션</p>
+          <p class="text-xs text-slate-500">남/여 3단계 변이 체크 (정상 / 이형접합 / 동형접합) · Gemini 연동 리포트</p>
         </div>
       </div>
       
       <div class="flex items-center gap-2">
+        <!-- 남성 / 여성 검사 모드 토글 -->
+        <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-300 shadow-inner">
+          <button id="btn-mode-female" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-pink-600 shadow-sm">👩 여성</button>
+          <button id="btn-mode-male" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-blue-700">👨 남성</button>
+        </div>
         <!-- 보험 상품 관리 -->
         <button id="btn-open-products" class="text-xs sm:text-sm px-3 py-1.5 bg-emerald-50 text-emerald-900 font-semibold rounded-lg hover:bg-emerald-100 transition border border-emerald-300 flex items-center gap-1.5 shadow-sm">
           <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,22 +118,11 @@
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600"></span>
         </span>
-        <span class="text-xs font-bold text-indigo-950">임상 질환군 테스트 모델:</span>
+        <span id="preset-title-label" class="text-xs font-bold text-indigo-950">여성 맞춤 질환군 테스트 모델:</span>
         <span class="text-xs text-indigo-800">개인정보 없이 유형별 변이 패턴을 즉시 시뮬레이션할 수 있습니다.</span>
       </div>
       <div class="flex flex-wrap items-center gap-1.5" id="preset-button-group">
-        <button class="preset-btn px-2.5 py-1 text-xs bg-indigo-600 text-white font-bold rounded-lg border border-indigo-600 transition shadow-sm" data-preset="model_cancer">
-          소화기 점막·종양 취약형 (CDH1/IL1B/TP53)
-        </button>
-        <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="model_detox">
-          해독 불균형·여성호르몬형 (CYP1A1/GSTM1)
-        </button>
-        <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="model_cardio">
-          심뇌혈관·혈압 취약형 (ACE/MTHFR/PLCL2)
-        </button>
-        <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="model_metabolism">
-          대사증후군·치매 관리형 (APOE/FABP2/SLC30A8)
-        </button>
+        <!-- 성별에 따라 renderPresetButtons()가 동적 주입 -->
       </div>
     </div>
   </div>
@@ -164,7 +158,7 @@
         
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">검사항목별 변이상태 체크 (3단계 표준 분류)</h2>
+            <h2 id="section-title" class="text-base font-bold text-slate-900">검사항목별 변이상태 체크 (여성 검사 46항목)</h2>
             <p class="text-xs text-slate-500 mt-0.5">각 항목의 <strong>[정상]</strong>, <strong>[이형접합(주의)]</strong>, <strong>[동형접합(고위험)]</strong>을 클릭해 테스트하세요.</p>
           </div>
           <!-- 카테고리 탭 -->
@@ -221,7 +215,7 @@
             <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
             Gemini 정밀 분석 프롬프트
           </h2>
-          <span class="text-xs font-bold px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full">실시간 생성</span>
+          <span id="prompt-gender-badge" class="text-xs font-bold px-2 py-0.5 bg-pink-50 text-pink-700 border border-pink-200 rounded-full">여성 리포트 모드</span>
         </div>
 
         <!-- 옵션 체크박스 -->
@@ -236,7 +230,7 @@
           </label>
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="opt-include-insurance" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
-            <span>20년납 비갱신 맞춤 보험 보장분석 포트폴리오</span>
+            <span id="opt-insurance-label">20년납 비갱신 맞춤 보험 보장분석 포트폴리오 (여성 질환 특화)</span>
           </label>
         </div>
 
@@ -293,7 +287,7 @@
   <div id="batch-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-xl rounded-2xl p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-base font-bold text-slate-900">유전자 결과 텍스트 일괄 붙여넣기</h3>
+        <h3 id="batch-modal-title" class="text-base font-bold text-slate-900">유전자 결과 텍스트 일괄 붙여넣기 (여성 검사)</h3>
         <button id="btn-close-batch" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
       </div>
       <p class="text-xs text-slate-500 mb-3">
@@ -533,7 +527,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
     }
 
     // 첨부 시트와 100% 동일한 순서로 정렬된 46개 유전자 DB (1번 IL1B ~ 46번 UMOD)
-    const GENE_DATABASE = [
+    const FEMALE_GENE_DATABASE = [
       { 
         id: "IL1B", name: "IL1B", category: "CANCER", desc: "인터루킨-1β / 위점막 과염증 및 헬리코박터 위암 감수성",
         levels: {
@@ -904,6 +898,350 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       }
     ];
 
+
+    const MALE_GENE_DATABASE = [
+      { 
+        id: "IL1B", name: "IL1B", category: "CANCER", desc: "인터루킨-1β / 위점막 과염증 및 헬리코박터 위암 감수성",
+        levels: {
+          NORMAL: { genotype: "CC", label: "정상 (CC/C)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "1L-1RN", name: "1L-1RN (IL1RN)", category: "DETOX", desc: "IL-1 수용체 길항제 / 만성 염증 억제 브레이크",
+        levels: {
+          NORMAL: { genotype: "L", label: "정상 (L/LL)" },
+          HETERO: { genotype: "LS", label: "이형접합 (LS)" },
+          HOMO:   { genotype: "SS", label: "동형접합 (SS)" }
+        }
+      },
+      { 
+        id: "1L-17A", name: "1L-17A", category: "DETOX", desc: "전립선·호흡기 면역 염증 사이토카인",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "CDH1", name: "CDH1", category: "CANCER", desc: "E-Cadherin / 상피세포 결합 유지, 미만성 위암·소화기암 침습 억제",
+        levels: {
+          NORMAL: { genotype: "GG", label: "정상 (GG/G)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "MLH1", name: "MLH1", category: "CANCER", desc: "DNA 불일치 복구 효소 / 대장암(린치 증후군) (A정상/GG변이)",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "TP53", name: "TP53", category: "CANCER", desc: "유전체의 수호자 / 전신 암세포 사멸 유도 및 손상 복구 (TP53)",
+        levels: {
+          NORMAL: { genotype: "CC", label: "정상 (CC/C)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "APC2", name: "APC2", category: "CANCER", desc: "Wnt 신호 억제 / 남성 대장 상피세포 비정상 증식 차단",
+        levels: {
+          NORMAL: { genotype: "TT", label: "정상 (TT/T)" },
+          HETERO: { genotype: "TC", label: "이형접합 (TC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "ERBB2", name: "ERBB2 (HER2)", category: "CANCER", desc: "표피성장인자 수용체 / 위암·식도암 및 종양 악성 증식 촉진",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "K-RAS", name: "K-RAS", category: "CANCER", desc: "세포 분열 조절 스위치 / 췌장암·대장암·폐암 악성 증식",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "APC", name: "APC", category: "CANCER", desc: "선종성 대장용종증 및 소화기 점막 종양 억제 브레이크",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "GSTP", name: "GSTP (GSTP1)", category: "DETOX", desc: "2상 해독 효소 / 전립선 조직 산화 스트레스 방어 및 폐·간 독소 배출",
+        levels: {
+          NORMAL: { genotype: "+", label: "정상 (+/++)" },
+          HETERO: { genotype: "+-", label: "이형접합 (+-)" },
+          HOMO:   { genotype: "--", label: "동형결손 (--)" }
+        }
+      },
+      { 
+        id: "CYP1A1", name: "CYP1A1", category: "DETOX", desc: "1상 산화 대사 (흡연·직화구이 탄화수소 발암물질 활성화)",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "TC", label: "이형접합 (TC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "GSTM1", name: "GSTM1", category: "DETOX", desc: "간·호흡기 2상 글루타치온 포합 해독 효소 (담배 연기 무독화)",
+        levels: {
+          NORMAL: { genotype: "+", label: "정상 (+/++)" },
+          HETERO: { genotype: "+-", label: "이형접합 (+-)" },
+          HOMO:   { genotype: "--", label: "동형결손 (--)" }
+        }
+      },
+      { 
+        id: "EGFR", name: "EGFR", category: "CANCER", desc: "표피성장인자 수용체 / 비소세포폐암 및 상피세포 악성화",
+        levels: {
+          NORMAL: { genotype: "C", label: "정상 (C/CC)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "PTEN", name: "PTEN (전립선 종양 억제)", category: "CANCER", desc: "PI3K/AKT 경로 억제 / 남성 전립선암 및 뇌종양 억제 브레이크",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "CYP2E1", name: "CYP2E1", category: "DETOX", desc: "알코올·유기용매 1차 산화 대사 / 간세포 손상 및 아세트알데히드 스트레스",
+        levels: {
+          NORMAL: { genotype: "c1/c1", label: "정상 (c1/c1)" },
+          HETERO: { genotype: "SL", label: "이형접합 (SL)" },
+          HOMO:   { genotype: "c2/c2", label: "동형접합 (c2/c2)" }
+        }
+      },
+      { 
+        id: "hMSH2", name: "hMSH2", category: "CANCER", desc: "DNA 불일치 복제 오류 교정 / 대장암 및 소화기 점막 종양 억제",
+        levels: {
+          NORMAL: { genotype: "C", label: "정상 (C/CC)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "ADIPOQ", name: "ADIPOQ", category: "METABOLISM", desc: "아디포넥틴 분비 / 내장지방 축적 방어 및 인슐린 감수성",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GT", label: "이형접합 (GT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "MTFHR1", name: "MTFHR1 (MTHFR)", category: "CARDIO", desc: "호모시스테인 재메틸화 / 혈관 내피 손상 방어 및 조기 뇌경색 방어",
+        levels: {
+          NORMAL: { genotype: "C", label: "정상 (C/CC)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "TNF", name: "TNF (TNF-α)", category: "DETOX", desc: "종양괴사인자 / 만성 전신 염증 및 혈관 내피 자극",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "HFE", name: "HFE", category: "DETOX", desc: "철분 대사 조절 / 남성 간 조직 산화 스트레스 및 혈색소증",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GC", label: "이형접합 (GC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "BRCA2", name: "BRCA2 (전립선/췌장)", category: "CANCER", desc: "DNA 이중가닥 절단 수복 / 전립선암(고악성도)·췌장암 감수성",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GC", label: "이형접합 (GC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "ABO", name: "ABO", category: "CARDIO", desc: "혈액 점도 및 혈전 감수성 조절 / 심혈관 폐색 위험",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "TC", label: "이형접합 (TC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "ATM", name: "ATM", category: "CANCER", desc: "DNA 손상 감지 키나아제 / 급성백혈병·림프종·전립선암 수복 결함",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "BRAF", name: "BRAF", category: "CANCER", desc: "MAPK 키나아제 신호 / 대장암·갑상선암 세포 과다 증식",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "TA", label: "이형접합 (TA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "P53", name: "P53", category: "CANCER", desc: "종양 억제 브레이크 인자 (검사지 P53 단독 항목)",
+        levels: {
+          NORMAL: { genotype: "CC", label: "정상 (CC/C)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "FOXE1", name: "FOXE1", category: "CANCER", desc: "갑상선 전사인자 / 갑상선 결절 및 유두암 감수성",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "NKX2-1", name: "NKX2-1", category: "CANCER", desc: "폐 및 갑상선 발달 인자 / 호흡기·갑상선 종양 억제",
+        levels: {
+          NORMAL: { genotype: "G", label: "정상 (G/GG)" },
+          HETERO: { genotype: "GT", label: "이형접합 (GT)" },
+          HOMO:   { genotype: "TT", label: "동형접합 (TT)" }
+        }
+      },
+      { 
+        id: "FLT-3", name: "FLT-3", category: "CANCER", desc: "조혈모세포 분화 조절 / 급성 골수성 백혈병 감수성",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "APOE", name: "APOE (치매/뇌혈관)", category: "METABOLISM", desc: "베타아밀로이드 노폐물 청소·지질 운반 / 알츠하이머 치매·뇌동맥경화",
+        levels: {
+          NORMAL: { genotype: "E3E3", label: "정상 (E3E3/E2)" },
+          HETERO: { genotype: "E3E4", label: "이형접합 (E3E4)" },
+          HOMO:   { genotype: "E4E4", label: "동형접합 (E4E4)" }
+        }
+      },
+      { 
+        id: "ACE", name: "ACE", category: "CARDIO", desc: "안지오텐신 전환 효소 / 남성 고혈압 및 심근경색·좌심실 비대",
+        levels: {
+          NORMAL: { genotype: "II", label: "정상 (II/I)" },
+          HETERO: { genotype: "ID", label: "이형접합 (ID)" },
+          HOMO:   { genotype: "DD", label: "동형결손 (DD)" }
+        }
+      },
+      { 
+        id: "NOS3", name: "NOS3", category: "CARDIO", desc: "혈관 확장 일산화질소(NO) 생성 / 발기부전 및 관상동맥 확장력",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "TG", label: "이형접합 (TG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "PHACTR1", name: "PHACTR1", category: "CARDIO", desc: "관상동맥 석회화 및 조기 급성심근경색 감수성",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "AP3D2-DOT2L", name: "AP3D2-DOT2L", category: "METABOLISM", desc: "세포 소포 수송 및 남성 기초 대사 항상성",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "PLCL2", name: "PLCL2", category: "CARDIO", desc: "혈관 내벽 면역·염증 신호 및 죽상경화반(플라크) 형성 조절",
+        levels: {
+          NORMAL: { genotype: "AA", label: "정상 (AA/A)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      },
+      { 
+        id: "HDAC9", name: "HDAC9", category: "CARDIO", desc: "혈관 평활근 석회화 및 대혈관 죽상경화성 뇌경색 위험",
+        levels: {
+          NORMAL: { genotype: "GG", label: "정상 (GG/G)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA)" }
+        }
+      },
+      { 
+        id: "PITX2", name: "PITX2", category: "CARDIO", desc: "심방 전기 신호 형성 / 심방세동(부정맥) 및 심인성 뇌색전증",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "TC", label: "이형접합 (TC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "FABP2", name: "FABP2", category: "METABOLISM", desc: "소장 내 지방산 흡수율 / 식후 중성지방 급증 및 지방간·대사증후군",
+        levels: {
+          NORMAL: { genotype: "GG", label: "정상 (GG/Ala)" },
+          HETERO: { genotype: "GA", label: "이형접합 (GA)" },
+          HOMO:   { genotype: "AA", label: "동형접합 (AA/Thr)" }
+        }
+      },
+      { 
+        id: "SLC30A8", name: "SLC30A8", category: "METABOLISM", desc: "췌장 베타세포 아연 수송체(ZnT8) / 인슐린 저장 및 제2형 당뇨",
+        levels: {
+          NORMAL: { genotype: "TT", label: "정상 (TT/T)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC/C)" }
+        }
+      },
+      { 
+        id: "KCNQ1", name: "KCNQ1", category: "METABOLISM", desc: "췌장 칼륨 이온 통로 / 인슐린 분비 민감도",
+        levels: {
+          NORMAL: { genotype: "T", label: "정상 (T/TT)" },
+          HETERO: { genotype: "CT", label: "이형접합 (CT)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC/C)" }
+        }
+      },
+      { 
+        id: "AGT", name: "AGT", category: "CARDIO", desc: "안지오텐시노겐 생성 / RAAS 혈압 조절 시작 물질 (염분 민감성)",
+        levels: {
+          NORMAL: { genotype: "TT", label: "정상 (TT/T)" },
+          HETERO: { genotype: "TC", label: "이형접합 (TC)" },
+          HOMO:   { genotype: "CC", label: "동형접합 (CC)" }
+        }
+      },
+      { 
+        id: "UMOD", name: "UMOD", category: "CARDIO", desc: "신장 나트륨 재흡수 조절 및 본태성 고혈압·통풍(요산) 감수성",
+        levels: {
+          NORMAL: { genotype: "A", label: "정상 (A/AA)" },
+          HETERO: { genotype: "AG", label: "이형접합 (AG)" },
+          HOMO:   { genotype: "GG", label: "동형접합 (GG)" }
+        }
+      }
+    ];
+
+    let currentGenderMode = "FEMALE";
+    let GENE_DATABASE = FEMALE_GENE_DATABASE;
+    function getActiveDB() { return currentGenderMode === "MALE" ? MALE_GENE_DATABASE : FEMALE_GENE_DATABASE; }
+
     function renderGeneCards() {
       const container = document.getElementById("gene-cards-container");
       if (!container) return;
@@ -1091,80 +1429,176 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
     }
 
     function applyPreset(presetKey) {
-      // 모든 항목 NORMAL 초기화
-      GENE_DATABASE.forEach(gene => { currentSelectedLevels[gene.id] = "NORMAL"; });
+      const db = getActiveDB();
+      // 초기화
+      db.forEach(gene => { currentSelectedLevels[gene.id] = "NORMAL"; });
 
       const nameEl = document.getElementById("user-name");
       const infoEl = document.getElementById("user-info");
       const noteEl = document.getElementById("user-note");
 
-      if (presetKey === "model_cancer") {
+      // 여성 프리셋들
+      if (presetKey === "female_cancer") {
         if (nameEl) nameEl.value = "고객 A";
         if (infoEl) infoEl.value = "30대 여성";
         if (noteEl) noteEl.value = "소화기 점막, 미만성 위암 및 전신 종양 억제 브레이크 취약 프로필";
-        currentSelectedLevels["IL1B"] = "HOMO";   // TT
-        currentSelectedLevels["CDH1"] = "HOMO";   // AA
-        currentSelectedLevels["TP53"] = "HOMO";   // TT
-        currentSelectedLevels["P53"] = "HOMO";    // TT
-        currentSelectedLevels["APC2"] = "HETERO"; // TC
-        currentSelectedLevels["GSTP"] = "HETERO"; // +-
-        currentSelectedLevels["CYP2E1"] = "HETERO"; // SL
-        currentSelectedLevels["APOE"] = "HETERO"; // E3E4
-        currentSelectedLevels["ACE"] = "HETERO";  // ID
-        currentSelectedLevels["PLCL2"] = "HETERO"; // AG
-        currentSelectedLevels["HDAC9"] = "HETERO"; // GA
-        currentSelectedLevels["FABP2"] = "HETERO"; // GA
-        currentSelectedLevels["AGT"] = "HETERO";  // TC
-      } else if (presetKey === "model_detox") {
+        currentSelectedLevels["IL1B"] = "HOMO";
+        currentSelectedLevels["CDH1"] = "HOMO";
+        currentSelectedLevels["TP53"] = "HOMO";
+        currentSelectedLevels["P53"] = "HOMO";
+        currentSelectedLevels["APC2"] = "HETERO";
+        currentSelectedLevels["GSTP"] = "HETERO";
+        currentSelectedLevels["CYP2E1"] = "HETERO";
+        currentSelectedLevels["APOE"] = "HETERO";
+        currentSelectedLevels["ACE"] = "HETERO";
+        currentSelectedLevels["PLCL2"] = "HETERO";
+        currentSelectedLevels["HDAC9"] = "HETERO";
+        currentSelectedLevels["FABP2"] = "HETERO";
+        currentSelectedLevels["AGT"] = "HETERO";
+      } else if (presetKey === "female_detox") {
         if (nameEl) nameEl.value = "고객 B";
         if (infoEl) infoEl.value = "30대 여성";
         if (noteEl) noteEl.value = "간·호흡기 2상 해독 결손 및 여성호르몬·산화 대사 집중 관리 프로필";
-        currentSelectedLevels["IL1B"] = "HETERO";   // CT
-        currentSelectedLevels["TP53"] = "HOMO";     // TT
-        currentSelectedLevels["P53"] = "HOMO";      // TT
-        currentSelectedLevels["ERBB2"] = "HETERO";  // AG
-        currentSelectedLevels["GSTP"] = "HETERO";   // +-
-        currentSelectedLevels["CYP1A1"] = "HOMO";   // CC
-        currentSelectedLevels["GSTM1"] = "HOMO";    // -- (결손)
-        currentSelectedLevels["CYP2E1"] = "HETERO"; // SL
-        currentSelectedLevels["MTFHR1"] = "HETERO"; // CT
-        currentSelectedLevels["ESR"] = "HOMO";      // TT
-        currentSelectedLevels["FABP2"] = "HETERO";  // GA
-      } else if (presetKey === "model_cardio") {
+        currentSelectedLevels["IL1B"] = "HETERO";
+        currentSelectedLevels["TP53"] = "HOMO";
+        currentSelectedLevels["P53"] = "HOMO";
+        currentSelectedLevels["ERBB2"] = "HETERO";
+        currentSelectedLevels["GSTP"] = "HETERO";
+        currentSelectedLevels["CYP1A1"] = "HOMO";
+        currentSelectedLevels["GSTM1"] = "HOMO";
+        currentSelectedLevels["CYP2E1"] = "HETERO";
+        currentSelectedLevels["MTFHR1"] = "HETERO";
+        currentSelectedLevels["ESR"] = "HOMO";
+        currentSelectedLevels["FABP2"] = "HETERO";
+      } else if (presetKey === "female_cardio") {
         if (nameEl) nameEl.value = "고객 C";
-        if (infoEl) infoEl.value = "40대 남성";
+        if (infoEl) infoEl.value = "40대 여성";
         if (noteEl) noteEl.value = "레닌-안지오텐신 혈관 수축, 호모시스테인 및 혈전·혈압 취약 프로필";
-        currentSelectedLevels["ACE"] = "HOMO";      // DD
-        currentSelectedLevels["AGT"] = "HETERO";    // TC
-        currentSelectedLevels["MTFHR1"] = "HOMO";   // TT
-        currentSelectedLevels["PLCL2"] = "HOMO";    // GG
-        currentSelectedLevels["HDAC9"] = "HETERO";  // GA
-        currentSelectedLevels["NOS3"] = "HETERO";   // TG
-        currentSelectedLevels["ABO"] = "HETERO";    // TC
-        currentSelectedLevels["PITX2"] = "HETERO";  // TC
-      } else if (presetKey === "model_metabolism") {
+        currentSelectedLevels["ACE"] = "HOMO";
+        currentSelectedLevels["AGT"] = "HETERO";
+        currentSelectedLevels["MTFHR1"] = "HOMO";
+        currentSelectedLevels["PLCL2"] = "HOMO";
+        currentSelectedLevels["HDAC9"] = "HETERO";
+        currentSelectedLevels["NOS3"] = "HETERO";
+        currentSelectedLevels["ABO"] = "HETERO";
+        currentSelectedLevels["PITX2"] = "HETERO";
+      } else if (presetKey === "female_metabolism") {
         if (nameEl) nameEl.value = "고객 D";
         if (infoEl) infoEl.value = "50대 여성";
         if (noteEl) noteEl.value = "식후 유리지방산 스펀지 흡수, 췌장 아연 수송 및 알츠하이머 치매 관리형";
-        currentSelectedLevels["APOE"] = "HOMO";     // E4E4
-        currentSelectedLevels["FABP2"] = "HOMO";    // AA
-        currentSelectedLevels["SLC30A8"] = "HOMO";  // CC
-        currentSelectedLevels["KCNQ1"] = "HETERO";  // CT
-        currentSelectedLevels["ADIPOQ"] = "HETERO"; // GT
-        currentSelectedLevels["MTFHR1"] = "HETERO"; // CT
+        currentSelectedLevels["APOE"] = "HOMO";
+        currentSelectedLevels["FABP2"] = "HOMO";
+        currentSelectedLevels["SLC30A8"] = "HOMO";
+        currentSelectedLevels["KCNQ1"] = "HETERO";
+        currentSelectedLevels["ADIPOQ"] = "HETERO";
+        currentSelectedLevels["MTFHR1"] = "HETERO";
+      }
+      // 남성 프리셋들
+      else if (presetKey === "male_prostate") {
+        if (nameEl) nameEl.value = "고객 M1";
+        if (infoEl) infoEl.value = "50대 남성";
+        if (noteEl) noteEl.value = "전립선 종양 억제 브레이크(PTEN) 및 미만성 위암·소화기 점막 취약 프로필";
+        currentSelectedLevels["PTEN"] = "HOMO";   // 전립선암
+        currentSelectedLevels["BRCA2"] = "HETERO"; // 전립선/췌장
+        currentSelectedLevels["CDH1"] = "HETERO";
+        currentSelectedLevels["TP53"] = "HOMO";
+        currentSelectedLevels["P53"] = "HOMO";
+        currentSelectedLevels["GSTP"] = "HETERO";
+        currentSelectedLevels["GSTM1"] = "HOMO";
+        currentSelectedLevels["hMSH2"] = "HETERO";
+      } else if (presetKey === "male_cardio") {
+        if (nameEl) nameEl.value = "고객 M2";
+        if (infoEl) infoEl.value = "40대 남성";
+        if (noteEl) noteEl.value = "관상동맥 석회화, 일산화질소 확장 저하 및 조기 급성심근경색 프로필";
+        currentSelectedLevels["PHACTR1"] = "HOMO"; // 관상동맥
+        currentSelectedLevels["NOS3"] = "HOMO";    // 혈관확장 NO
+        currentSelectedLevels["ACE"] = "HOMO";     // DD 결손
+        currentSelectedLevels["MTFHR1"] = "HOMO";  // 호모시스테인
+        currentSelectedLevels["PLCL2"] = "HETERO";
+        currentSelectedLevels["PITX2"] = "HETERO";
+      } else if (presetKey === "male_detox") {
+        if (nameEl) nameEl.value = "고객 M3";
+        if (infoEl) infoEl.value = "40대 남성";
+        if (noteEl) noteEl.value = "담배 연기 1상 폭발 대사 + 알코올 활성산소 + 2상 해독 완전 결손 프로필";
+        currentSelectedLevels["CYP1A1"] = "HOMO";
+        currentSelectedLevels["CYP2E1"] = "HETERO"; // SL
+        currentSelectedLevels["GSTM1"] = "HOMO";    // --
+        currentSelectedLevels["GSTP"] = "HETERO";   // +-
+        currentSelectedLevels["TP53"] = "HOMO";
+        currentSelectedLevels["P53"] = "HOMO";
+        currentSelectedLevels["HFE"] = "HETERO";
+      } else if (presetKey === "male_metabolism") {
+        if (nameEl) nameEl.value = "고객 M4";
+        if (infoEl) infoEl.value = "50대 남성";
+        if (noteEl) noteEl.value = "남성 지방간·식후 중성지방 급증 및 췌장 인슐린 분비 취약 프로필";
+        currentSelectedLevels["FABP2"] = "HOMO";
+        currentSelectedLevels["SLC30A8"] = "HOMO";
+        currentSelectedLevels["ADIPOQ"] = "HOMO";
+        currentSelectedLevels["APOE"] = "HETERO";
+        currentSelectedLevels["KCNQ1"] = "HETERO";
       }
 
-      // 버튼 활성 스타일 토글
+      // 버튼 토글 스타일
       document.querySelectorAll(".preset-btn").forEach(b => {
-        if (b.dataset.preset === presetKey) {
-          b.className = "preset-btn px-2.5 py-1 text-xs bg-indigo-600 text-white font-bold rounded-lg border border-indigo-600 transition shadow-sm";
+        const isSelected = b.dataset.preset === presetKey;
+        if (currentGenderMode === "FEMALE") {
+          b.className = isSelected 
+            ? "preset-btn px-2.5 py-1 text-xs bg-indigo-600 text-white font-bold rounded-lg border border-indigo-600 transition shadow-sm"
+            : "preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm";
         } else {
-          b.className = "preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm";
+          b.className = isSelected 
+            ? "preset-btn px-2.5 py-1 text-xs bg-blue-600 text-white font-bold rounded-lg border border-blue-600 transition shadow-sm"
+            : "preset-btn px-2.5 py-1 text-xs bg-white hover:bg-blue-600 hover:text-white text-blue-900 font-semibold rounded-lg border border-blue-300 transition shadow-sm";
         }
       });
 
       renderGeneCards();
       updatePrompt();
+    }
+
+    function renderPresetButtons() {
+      const container = document.getElementById("preset-button-group");
+      const titleLabel = document.getElementById("preset-title-label");
+      if (!container) return;
+      if (currentGenderMode === "FEMALE") {
+        if (titleLabel) titleLabel.textContent = "여성 맞춤 질환군 테스트 모델:";
+        container.innerHTML = `
+          <button class="preset-btn px-2.5 py-1 text-xs bg-indigo-600 text-white font-bold rounded-lg border border-indigo-600 transition shadow-sm" data-preset="female_cancer">소화기·부인과 종양형 (CDH1/IL1B/TP53/BRCA2)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="female_detox">해독 불균형·여성호르몬형 (CYP1A1/GSTM1/ESR)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="female_cardio">심뇌혈관·혈압 취약형 (ACE/MTHFR/PLCL2)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 font-semibold rounded-lg border border-indigo-300 transition shadow-sm" data-preset="female_metabolism">대사증후군·치매 관리형 (APOE/FABP2/SLC30A8)</button>`;
+      } else {
+        if (titleLabel) titleLabel.textContent = "남성 맞춤 질환군 테스트 모델:";
+        container.innerHTML = `
+          <button class="preset-btn px-2.5 py-1 text-xs bg-blue-600 text-white font-bold rounded-lg border border-blue-600 transition shadow-sm" data-preset="male_prostate">전립선·소화기 종양 고위험형 (PTEN/BRCA2/TP53/CDH1)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-blue-600 hover:text-white text-blue-900 font-semibold rounded-lg border border-blue-300 transition shadow-sm" data-preset="male_cardio">남성 급성심근·뇌졸중형 (ACE/PHACTR1/NOS3/MTHFR)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-blue-600 hover:text-white text-blue-900 font-semibold rounded-lg border border-blue-300 transition shadow-sm" data-preset="male_detox">흡연·음주 간/폐 해독결손형 (CYP1A1/CYP2E1/GSTM1)</button>
+          <button class="preset-btn px-2.5 py-1 text-xs bg-white hover:bg-blue-600 hover:text-white text-blue-900 font-semibold rounded-lg border border-blue-300 transition shadow-sm" data-preset="male_metabolism">지방간·당뇨·대사복합형 (FABP2/SLC30A8/ADIPOQ)</button>`;
+      }
+      container.querySelectorAll(".preset-btn").forEach(btn => btn.addEventListener("click", () => applyPreset(btn.dataset.preset)));
+    }
+
+    function setGenderMode(mode) {
+      if (currentGenderMode === mode) return;
+      currentGenderMode = mode;
+      GENE_DATABASE = getActiveDB();
+      const isFemale = mode === "FEMALE";
+      const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      const bf = document.getElementById("btn-mode-female");
+      const bm = document.getElementById("btn-mode-male");
+      if (bf) bf.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 " + (isFemale ? "bg-white text-pink-600 shadow-sm" : "text-slate-600 hover:text-pink-600");
+      if (bm) bm.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 " + (isFemale ? "text-slate-600 hover:text-blue-700" : "bg-white text-blue-600 shadow-sm");
+      const gb = document.getElementById("gender-badge");
+      if (gb) gb.className = "text-[10px] font-bold px-2 py-0.5 rounded-full border " + (isFemale ? "bg-pink-100 text-pink-700 border-pink-200" : "bg-blue-100 text-blue-700 border-blue-200");
+      set("gender-badge", isFemale ? "여성 검사 모드" : "남성 검사 모드");
+      set("prompt-gender-badge", isFemale ? "여성 리포트 모드" : "남성 리포트 모드");
+      set("section-title", `검사항목별 변이상태 체크 (${isFemale ? "여성" : "남성"} 검사 ${GENE_DATABASE.length}항목)`);
+      set("opt-insurance-label", `20년납 비갱신 맞춤 보험 보장분석 포트폴리오 (${isFemale ? "여성" : "남성"} 질환 특화)`);
+      set("batch-modal-title", `유전자 결과 텍스트 일괄 붙여넣기 (${isFemale ? "여성" : "남성"} 검사)`);
+      const ui = document.getElementById("user-info");
+      if (ui) { if (isFemale && ui.value.includes("남성")) ui.value = "30대 여성"; if (!isFemale && ui.value.includes("여성")) ui.value = "40대 남성"; }
+      renderPresetButtons();
+      applyPreset(isFemale ? "female_cancer" : "male_prostate");
     }
 
     function parseBatchInput(text) {
@@ -1866,10 +2300,13 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
         });
       }
 
-      // 프리셋 버튼
-      document.querySelectorAll(".preset-btn").forEach(btn => {
-        btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
-      });
+      // 프리셋 버튼은 renderPresetButtons()가 동적으로 바인딩함
+
+      // 남성/여성 모드 토글
+      const btnModeFemale = document.getElementById("btn-mode-female");
+      const btnModeMale = document.getElementById("btn-mode-male");
+      if (btnModeFemale) btnModeFemale.addEventListener("click", () => setGenderMode("FEMALE"));
+      if (btnModeMale) btnModeMale.addEventListener("click", () => setGenderMode("MALE"));
 
       // 인풋 변경 감지
       ["user-name", "user-info", "user-note"].forEach(id => {
@@ -2101,8 +2538,9 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       // 2. UI 이벤트 리스너 연결
       setupEvents();
 
-      // 3. 첫 번째 프리셋(소화기 점막·종양 취약형) 기본 적용하여 화면 채우기
-      applyPreset("model_cancer");
+      // 3. 성별 프리셋 버튼 렌더링 + 기본(여성 소화기·부인과 종양형) 적용
+      renderPresetButtons();
+      applyPreset("female_cancer");
 
       // 4. 로그인 상태 초기화 (Supabase 설정 시 로그인 화면 표시)
       initAuth();
