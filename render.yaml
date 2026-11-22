@@ -11,10 +11,19 @@ services:
     startCommand: npm start
     autoDeploy: true
     envVars:
+      # 어떤 LLM으로 분석할지: gemini 또는 openai(GPT)
+      - key: LLM_PROVIDER
+        value: openai
+      # ── Gemini 사용 시 ──
       - key: GEMINI_API_KEY
         sync: false          # 대시보드에서 직접 입력 (비밀값)
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
+      # ── GPT(OpenAI) 사용 시: LLM_PROVIDER 를 openai 로 바꾸고 아래 입력 ──
+      - key: OPENAI_API_KEY
+        sync: false          # 대시보드에서 직접 입력 (비밀값)
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
       - key: SUPABASE_URL
         sync: false          # 2단계(로그인) 쓸 때만 입력
       - key: SUPABASE_ANON_KEY

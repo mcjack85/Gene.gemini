@@ -17,8 +17,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+// ── LLM 제공자 선택: "gemini"(기본) 또는 "openai"(GPT) ──
+// .env 에서 LLM_PROVIDER=openai 로 바꾸면 GPT로 분석합니다. (프론트는 수정 불필요)
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || "gemini").toLowerCase();
+const USE_OPENAI = LLM_PROVIDER === "openai";
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+// 현재 선택된 제공자의 키 / 모델 / 표시 이름
+const ACTIVE_KEY = USE_OPENAI ? OPENAI_API_KEY : GEMINI_API_KEY;
+const ACTIVE_MODEL = USE_OPENAI ? OPENAI_MODEL : GEMINI_MODEL;
+const PROVIDER_LABEL = USE_OPENAI ? "OpenAI" : "Gemini";
 
 // ── 시스템 지시문: 상담 리포트 품질을 일관되게 고정 ──────────────
 const SYSTEM_INSTRUCTION = `당신은 유전자 검사 결과를 일반인이 이해하기 쉽게 설명하는 '전문 유전 건강 상담 어시스턴트'입니다.
@@ -68,15 +81,16 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 
 // 헬스 체크
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, model: GEMINI_MODEL, keyConfigured: Boolean(GEMINI_API_KEY), authEnabled: AUTH_ENABLED });
+  res.json({ ok: true, provider: LLM_PROVIDER, model: ACTIVE_MODEL, keyConfigured: Boolean(ACTIVE_KEY), authEnabled: AUTH_ENABLED });
 });
 
 // ── 핵심: Gemini 분석 호출 ──────────────────────────────────────
 app.post("/api/analyze", async (req, res) => {
   try {
-    if (!GEMINI_API_KEY) {
+    if (!ACTIVE_KEY) {
+      const envName = USE_OPENAI ? "OPENAI_API_KEY" : "GEMINI_API_KEY";
       return res.status(500).json({
-        error: "서버에 GEMINI_API_KEY가 설정되지 않았습니다. server/.env 파일을 확인하세요."
+        error: `서버에 ${envName}가 설정되지 않았습니다. server/.env 파일을 확인하세요.`
       });
     }
 
@@ -91,15 +105,40 @@ app.post("/api/analyze", async (req, res) => {
       return res.status(400).json({ error: "유효한 prompt가 필요합니다." });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      GEMINI_MODEL
-    )}:generateContent?key=${GEMINI_API_KEY}`;
-
-    const requestBody = JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.65, topP: 0.95, maxOutputTokens: 8192 }
-    });
+    // 제공자별로 엔드포인트 / 헤더 / 요청본문 / 응답파서를 다르게 구성
+    let url, reqHeaders, requestBody, parseText;
+    if (USE_OPENAI) {
+      // ── GPT (OpenAI Chat Completions) ──
+      url = "https://api.openai.com/v1/chat/completions";
+      reqHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`
+      };
+      requestBody = JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_INSTRUCTION },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.65,
+        top_p: 0.95,
+        max_tokens: 8192
+      });
+      parseText = (data) => data?.choices?.[0]?.message?.content || "";
+    } else {
+      // ── Gemini (기본) ──
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        GEMINI_MODEL
+      )}:generateContent?key=${GEMINI_API_KEY}`;
+      reqHeaders = { "Content-Type": "application/json" };
+      requestBody = JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.65, topP: 0.95, maxOutputTokens: 8192 }
+      });
+      parseText = (data) =>
+        data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
+    }
 
     // 일시적 과부하(503)/레이트리밋(429)은 짧은 백오프로 자동 재시도.
     // 각 시도는 TIMEOUT_MS 안에 끝나지 않으면 중단(무한 대기 방지).
@@ -112,7 +151,7 @@ app.post("/api/analyze", async (req, res) => {
       try {
         upstream = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: reqHeaders,
           body: requestBody,
           signal: ctrl.signal
         });
@@ -126,7 +165,7 @@ app.post("/api/analyze", async (req, res) => {
       errBody = await upstream.text().catch(() => "");
       const retriable = upstream.status === 503 || upstream.status === 429;
       if (!retriable || attempt === MAX_TRIES) break;
-      console.warn(`[Gemini ${upstream.status}] 재시도 ${attempt}/${MAX_TRIES - 1}...`);
+      console.warn(`[${PROVIDER_LABEL} ${upstream.status}] 재시도 ${attempt}/${MAX_TRIES - 1}...`);
       await new Promise(r => setTimeout(r, 1500 * attempt)); // 1.5s, 3s
     }
 
@@ -134,22 +173,21 @@ app.post("/api/analyze", async (req, res) => {
       return res.status(504).json({ error: "AI 응답이 지연되어 시간 초과되었습니다. 잠시 후 다시 시도하거나 변이 항목을 줄여보세요." });
     }
     if (!upstream.ok) {
-      console.error("[Gemini 오류]", upstream.status, errBody);
+      console.error(`[${PROVIDER_LABEL} 오류]`, upstream.status, errBody);
       return res
         .status(502)
-        .json({ error: `Gemini API 오류 (${upstream.status})`, detail: errBody.slice(0, 500) });
+        .json({ error: `${PROVIDER_LABEL} API 오류 (${upstream.status})`, detail: errBody.slice(0, 500) });
     }
 
     const data = await upstream.json();
-    const text =
-      data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
+    const text = parseText(data);
 
     if (!text) {
-      return res.status(502).json({ error: "Gemini가 빈 응답을 반환했습니다.", raw: data });
+      return res.status(502).json({ error: `${PROVIDER_LABEL}가 빈 응답을 반환했습니다.`, raw: data });
     }
 
     // TODO(2단계): 로그인 사용자라면 여기서 상담 결과를 DB에 저장
-    res.json({ text, model: GEMINI_MODEL });
+    res.json({ text, model: ACTIVE_MODEL });
   } catch (err) {
     console.error("[analyze 예외]", err);
     res.status(500).json({ error: "서버 내부 오류", detail: String(err?.message || err) });
@@ -163,5 +201,5 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`✅ 서버 실행: http://localhost:${PORT}`);
-  console.log(`   모델: ${GEMINI_MODEL} | Gemini 키: ${GEMINI_API_KEY ? "설정됨" : "❌ 미설정 (.env 확인)"} | 로그인 검증: ${AUTH_ENABLED ? "ON" : "OFF(1단계)"}`);
+  console.log(`   제공자: ${PROVIDER_LABEL} | 모델: ${ACTIVE_MODEL} | 키: ${ACTIVE_KEY ? "설정됨" : "❌ 미설정 (.env 확인)"} | 로그인 검증: ${AUTH_ENABLED ? "ON" : "OFF(1단계)"}`);
 });
