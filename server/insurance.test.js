@@ -15,12 +15,16 @@ function fixture(url) {
   if (p.has("regnNm")) {
     assert.equal(p.get("ServiceKey"), "test/key+");
     const sector = p.get("regnNm");
-    return response([{ fnclstNm: "가상" + sector, prdNm: "테스트 상품", regDate: "20260101", prdPttn: "보험", prdSalDscnDt: page === 1 ? "" : "20261020" }], page, 2);
+    assert.ok(["생보", "손보"].includes(sector));
+    return Response.json({ getProductList202607: { header: { resultCode: "00" }, pageNo: page, totalCount: 2,
+      item: [{ fncIstNm: "가상" + sector, prdNm: "테스트 상품", regDate: "20260101", prdPttn: "보험", prdSalDscnDt: page === 1 ? "" : "20261020" }] } });
   }
   assert.equal(p.get("serviceKey"), "test/key+");
-  if (p.get("basDt") !== "20261120") return response([], page);
-  return response([{ cmpyNm: "가상손해보험", cmpyCd: "dummy", prdNm: "가상 실손", ptrn: "테스트",
-    basDt: "20261120", age: "40", mog: "입원", mlInsRt: "1,234", fmlInsRt: "" }], page);
+  assert.ok(p.get("endBasDt") >= "20261123");
+  const item = { cmpyNm: "가상손해보험", cmpyCd: "dummy", prdNm: "가상 실손", ptrn: "테스트",
+    basDt: "20261031", age: "40", mog: "입원", mlInsRt: "1,234", fmlInsRt: "" };
+  if (page === 1) return response([{ ...item, basDt: "20260930" }, { ...item, cmpyNm: "다른회사", basDt: "20260506" }], page, 4);
+  return response([item, { ...item, basDt: "20260801" }], page, 4);
 }
 
 test("collects both insurance sectors and keeps the most recent published medical conditions", async () => {
@@ -29,7 +33,9 @@ test("collects both insurance sectors and keeps the most recent published medica
   assert.equal(catalog.state.kdic.status, "ready");
   assert.equal(catalog.state.kdic.products.length, 4);
   assert.equal(new Set(catalog.state.kdic.products.map(p => p.id)).size, 4);
-  assert.equal(catalog.state.medical.products[0].asOf, "2026-11-20");
+  assert.equal(catalog.state.medical.products.length, 2);
+  assert.equal(catalog.state.medical.products[0].asOf, "2026-10-31");
+  assert.equal(catalog.state.medical.products[1].asOf, "2026-05-06");
   assert.deepEqual(catalog.state.medical.products[0].rates[0], { coverage: "입원", age: "40", male: 1234, female: null });
 });
 
@@ -37,11 +43,11 @@ test("an incomplete refresh preserves the prior collection and retries after the
   let now = time, fail = false, calls = 0;
   const catalog = createCatalog({ key: "test/key+", clock: () => now, fetcher: url => {
     calls++;
-    if (fail && url.searchParams.get("pageNo") === "2") return response([], 2, 2);
+    if (fail && url.searchParams.has("regnNm") && url.searchParams.get("pageNo") === "2") return response([], 2, 2);
     return fixture(url);
   } });
   await Promise.all([catalog.refresh(), catalog.refresh()]);
-  assert.equal(calls, 8);
+  assert.equal(calls, 6);
   const previous = catalog.state.kdic.products;
   now += 86400000;
   fail = true;

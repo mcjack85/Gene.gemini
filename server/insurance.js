@@ -1,6 +1,6 @@
 import express from "express";
 import pg from "pg";
-import { sources } from "./insurance-sources.js";
+import { PublicationError, sources } from "./insurance-sources.js";
 
 // 13:10 KST marks the next refresh window, after the FSC publication time.
 function publicationWindow(time) {
@@ -14,7 +14,7 @@ export function createCatalog({ key, db, fetcher = fetch, clock = Date.now }) {
   let running;
   let restored = false;
   function adopt(id, time, products) {
-    const items = products.sort((a, b) => a.insurer.localeCompare(b.insurer, "ko") || a.name.localeCompare(b.name, "ko") || a.id.localeCompare(b.id));
+    const items = products.sort((a, b) => (b.asOf ?? "").localeCompare(a.asOf ?? "") || a.insurer.localeCompare(b.insurer, "ko") || a.name.localeCompare(b.name, "ko") || a.id.localeCompare(b.id));
     Object.assign(state[id], { fetchedAt: new Date(time).toISOString(), products: items, status: key ? "ready" : "unconfigured" });
   }
   async function restore() {
@@ -48,10 +48,10 @@ export function createCatalog({ key, db, fetcher = fetch, clock = Date.now }) {
         }
       }
       adopt(id, now, products);
-    } catch {
+    } catch (error) {
       entry.status = "error";
       entry.retryAfter = clock() + 30 * 60000;
-      console.warn("[보험 공시] 수집 실패:", id);
+      console.warn("[보험 공시] 수집 실패:", id, error instanceof PublicationError ? error.message : "자료 처리 또는 저장 오류");
     }
   }
   async function sync() {
@@ -86,7 +86,7 @@ export function createInsuranceRouter(catalog, verify) {
     const offset = (Number(page) - 1) * 20;
     res.json({
       status, fetchedAt, sourceName: sources[source].label, sourceUrl: sources[source].url,
-      insurers: [...new Set(products.map(p => p.insurer))],
+      insurers: [...new Set(products.map(p => p.insurer))].sort((a, b) => a.localeCompare(b, "ko")),
       total: matches.length, page: Number(page), pageSize: 20,
       products: matches.slice(offset, offset + 20).map(({ rates, ...product }) => product)
     });
