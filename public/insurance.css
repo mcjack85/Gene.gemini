@@ -1,0 +1,30 @@
+#insurance-dialog { margin: auto; padding: 0; width: min(46rem, calc(100% - 1.5rem)); max-height: 88vh; border: 1px solid #cad9d3; border-radius: 1rem; background: #fff; color: #182822; box-shadow: 0 1.5rem 4rem #15392c33; }
+#insurance-dialog::backdrop { background: #13261ec2; }
+.ins-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: #047857; color: white; }
+.ins-header h2, .ins-body h3 { font-size: 1.05rem; font-weight: 750; }
+.ins-body { padding: 1.15rem; font-size: .88rem; }
+#insurance-dialog button, #insurance-dialog select, #insurance-dialog input { font: inherit; }
+.ins-body button, .ins-body input, .ins-body select, #ins-close { border: 1px solid #c5d3cc; border-radius: .48rem; padding: .45rem .65rem; }
+.ins-body select, .ins-body input { width: 100%; background: white; min-width: 0; }
+.ins-body button:disabled { opacity: .42; }
+.ins-body button:enabled:hover { background-color: #edf7f2; }
+#ins-form, .ins-rate-filters { display: grid; grid-template-columns: 1.3fr 1fr 1.2fr auto; align-items: end; gap: .6rem; }
+.ins-body label { display: grid; gap: .25rem; color: #395246; font-size: .82rem; font-weight: 600; }
+.ins-body .ins-primary { background: #066346; color: white; }
+.ins-body .ins-primary:enabled:hover { background: #034e37; }
+#ins-status, #ins-attribution, .ins-meta { color: #52675c; font-size: .82rem; margin: .8rem 0; }
+#ins-results { list-style: none; margin: 0; padding: 0; }
+#ins-results li { border-top: 1px solid #e0e8e4; }
+#ins-results button { display: grid; gap: .2rem; width: 100%; text-align: left; border: 0; padding: .7rem .4rem; }
+#ins-results small { color: #52675c; }
+#ins-pages:not([hidden]) { display: flex; align-items: center; justify-content: center; gap: .85rem; margin-top: .7rem; }
+#ins-attribution a { text-decoration: underline; }
+#ins-detail h3 { margin: .8rem 0 .2rem; overflow-wrap: anywhere; }
+.ins-rate-filters { grid-template-columns: repeat(3, minmax(0,1fr)); margin: .85rem 0; }
+#ins-detail table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+#ins-detail th, #ins-detail td { text-align: left; padding: .4rem; border-bottom: 1px solid #e0e8e4; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  #ins-form { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .ins-body { padding: .8rem; }
+  .ins-rate-filters { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

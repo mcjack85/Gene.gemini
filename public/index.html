@@ -22,6 +22,7 @@
   <!-- 보험 상품 엑셀/CSV 업로드 파싱 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
+  <link rel="stylesheet" href="insurance.css">
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
@@ -267,6 +268,7 @@
             </button>
           </div>
 
+          <button type="button" data-open-insurance class="w-full py-2.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">보험사별 공시 상품 조회</button>
           <button id="btn-open-match" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
@@ -393,6 +395,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
 
       <div class="p-5 overflow-y-auto space-y-5">
         <!-- 업로드/추가 영역 -->
+        <button type="button" data-open-insurance class="px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg text-sm font-semibold">보험사별 공시 상품 조회</button>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
             <h4 class="text-sm font-bold text-slate-900 mb-2">엑셀/CSV 업로드</h4>
@@ -2560,5 +2563,32 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       });
     }
   </script>
+  <dialog id="insurance-dialog" aria-labelledby="insurance-title">
+    <div class="ins-header">
+      <h2 id="insurance-title">보험사별 공시 상품 조회</h2>
+      <button type="button" id="ins-close" aria-label="보험 조회 닫기">닫기</button>
+    </div>
+    <div class="ins-body">
+      <section id="ins-list">
+        <form id="ins-form">
+          <label>조회 자료<select id="ins-source">
+            <option value="kdic">예금자보호 대상 상품</option>
+            <option value="medical">실손보험 기준 보험료</option>
+          </select></label>
+          <label>보험사<select id="ins-insurer"><option value="">전체 보험사</option></select></label>
+          <label>상품명<input id="ins-query" type="search" placeholder="상품명 일부 입력" maxlength="160"></label>
+          <button type="submit" class="ins-primary">검색</button>
+        </form>
+        <p id="ins-status" role="status"></p>
+        <ul id="ins-results" aria-label="상품 목록"></ul>
+        <nav id="ins-pages" aria-label="검색 결과 페이지" hidden>
+          <button type="button" id="ins-prev">이전</button><span id="ins-page"></span><button type="button" id="ins-next">다음</button>
+        </nav>
+      </section>
+      <section id="ins-detail" aria-label="상품 상세" hidden></section>
+      <p id="ins-attribution"></p>
+    </div>
+  </dialog>
+  <script src="insurance.js"></script>
 </body>
 </html>
