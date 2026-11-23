@@ -1,6 +1,6 @@
 // 서비스워커: 앱 셸(정적 파일)만 캐싱합니다.
 // ⚠️ 유전자/상담 데이터와 /api/* 응답은 민감정보이므로 절대 캐싱하지 않습니다.
-const CACHE = "gene-platform-v5-rider-plans";
+const CACHE = "gene-platform-v6-insurance-picker";
 const APP_SHELL = [
   "./",
   "./index.html",

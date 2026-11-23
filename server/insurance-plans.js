@@ -2,6 +2,7 @@
 // share an option so they also stay together when removed or exported.
 export const planForDisclosure = new Map([
   ["9cd1cbfedf992f2e9f42d95b20526d00", "aia-premium-cancer-1-2"],
+  ["d1004fa6fe86ae3430ea6c99973e9068", "aia-total-health-general"],
   ["677279e22f8cbb0d95594819e268a28e", "db-medical-2605-cm"]
 ]);
 
@@ -24,6 +25,27 @@ export const plans = [
         id: "polyp-surgery",
         names: ["무배당 8대기관 양성신생물 및 폴립 수술특약(갱신형)"],
         condition: "약관에서 정한 8대기관 양성신생물 및 폴립의 직접 치료를 위한 수술을 연간 1회 한도로 보장합니다."
+      }
+    ]
+  },
+  {
+    id: "aia-total-health-general",
+    insurer: "AIA생명",
+    name: "무배당 AIA 원스톱 종합건강보험",
+    version: "2형 일반심사형 · 암 집중 플랜",
+    base: "일반심사형 주계약에 암 치료 관련 특약을 추가하는 구성입니다.",
+    checked: "2026-11-23",
+    url: "https://direct.aia.co.kr/DMD/webin/aia_total_health_cancer",
+    options: [
+      {
+        id: "cancer-surgery",
+        names: ["무배당 암수술특약(갱신형)"],
+        condition: "약관에서 정한 암 등의 직접적인 치료를 목적으로 받은 수술을 보장합니다."
+      },
+      {
+        id: "tertiary-outpatient",
+        names: ["무배당 상급종합병원 암직접치료통원특약(갱신형)"],
+        condition: "상급종합병원에서 암의 직접 치료를 위해 통원한 경우에 적용되며, 세부 지급 조건은 상품 안내에서 확인할 수 있습니다."
       }
     ]
   },

@@ -74,11 +74,11 @@
           <button id="btn-mode-male" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-blue-700">👨 남성</button>
         </div>
         <!-- 보험 상품 관리 -->
-        <button id="btn-open-products" class="text-xs sm:text-sm px-3 py-1.5 bg-emerald-50 text-emerald-900 font-semibold rounded-lg hover:bg-emerald-100 transition border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+        <button type="button" data-open-plan class="text-xs sm:text-sm px-3 py-1.5 bg-emerald-50 text-emerald-900 font-semibold rounded-lg hover:bg-emerald-100 transition border border-emerald-300 flex items-center gap-1.5 shadow-sm">
           <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <span class="hidden sm:inline">보험상품 관리</span>
+          <span class="hidden sm:inline">보험상품 선택</span>
           <span class="sm:hidden">상품</span>
         </button>
         <!-- 상담기록 (로그인 시 노출) -->
@@ -269,14 +269,14 @@
           </div>
 
           <button type="button" data-customer-insurance class="w-full py-2.5 bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">고객용 · 관심 담보로 상품 찾기</button>
-          <button type="button" data-advisor-insurance class="w-full py-2.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">설계사용 · 상담 후보 검토</button>
-          <button type="button" data-open-plan class="w-full py-2.5 bg-emerald-800 text-white font-bold rounded-xl text-xs">보험 설계 · 주계약과 특약 선택</button>
-          <button type="button" id="btn-open-match" data-open-insurance class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+          <button type="button" data-open-insurance class="w-full py-2.5 bg-white text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">전체 공시상품 조회</button>
+          <button type="button" id="btn-open-match" data-open-plan class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
             </svg>
-            <span>보험상품 매칭 보기 · 공시상품 조회</span>
+            <span>보험 매칭 · 상품과 특약 선택</span>
           </button>
+          <button id="btn-open-products" class="text-xs text-slate-600 underline" type="button">등록 자료 관리</button>
 
           <p class="text-[11px] text-slate-400 text-center leading-relaxed">
             ※ 본 결과는 의학적 진단이 아닌 <strong>건강관리 참고용</strong>이며, 보험 추천은 등록된 상담사의 최종 판단을 돕는 참고 자료입니다.
@@ -331,7 +331,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       <div class="p-6 overflow-y-auto space-y-6 text-sm" id="sim-content"></div>
       <div class="review-actions">
         <button type="button" data-customer-insurance>고객용 · 관심 담보로 상품 찾기</button>
-        <button type="button" data-advisor-insurance>설계사용 · 상담 후보 검토</button>
+        <button type="button" data-open-plan>보험 매칭 · 상품과 특약 선택</button>
       </div>
 
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
@@ -394,7 +394,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       <div class="px-6 py-4 bg-emerald-700 text-white flex items-center justify-between">
         <div>
           <h3 class="text-base font-bold">보험상품 관리 (여러 보험사)</h3>
-          <p class="text-xs text-emerald-100 mt-0.5">상품을 등록한 뒤 설계사용 화면에서 담보와 판매 근거를 확인하세요.</p>
+          <p class="text-xs text-emerald-100 mt-0.5">직접 등록한 자료와 백업을 관리합니다.</p>
         </div>
         <button id="btn-close-products" class="text-emerald-200 hover:text-white text-lg font-bold">✕</button>
       </div>
@@ -2482,19 +2482,22 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
     </div>
   </dialog>
   <dialog id="plan-dialog" aria-labelledby="plan-title">
-    <div class="ins-header"><h2 id="plan-title">보험 설계 · 주계약과 특약</h2><button id="plan-close" type="button">닫기</button></div>
+    <div class="ins-header"><h2 id="plan-title">보험상품과 특약 선택</h2><button id="plan-close" type="button">닫기</button></div>
     <div class="ins-body plan-body">
       <p id="plan-status" role="status"></p>
       <button type="button" id="plan-retry" hidden>다시 불러오기</button>
       <div id="plan-fields" hidden>
-        <div class="plan-selects">
-          <label>보험사<select id="plan-insurer"></select></label>
-          <label>주계약 · 상품 유형<select id="plan-product"></select></label>
-        </div>
+        <section aria-labelledby="plan-insurer-title">
+          <h3 id="plan-insurer-title">보험사 선택</h3><div id="plan-insurer" class="plan-companies"></div>
+        </section>
+        <section id="plan-product-step" aria-labelledby="plan-product-title" hidden>
+          <h3 id="plan-product-title" tabindex="-1">상품 선택</h3><div id="plan-product" class="plan-products"></div>
+        </section>
         <section id="plan-config" hidden>
-          <h3>주계약</h3><p id="plan-base"></p>
-          <p class="ins-meta"><a id="plan-source" target="_blank" rel="noopener noreferrer">보험사 상품 안내</a> · <span id="plan-date"></span> 확인</p>
-          <fieldset><legend>추가할 특약</legend><div id="plan-options"></div></fieldset>
+          <fieldset><legend id="plan-riders-title" tabindex="-1">특약 선택</legend><div id="plan-options"></div></fieldset>
+          <details class="plan-info"><summary>주계약 보장 내용과 상품 안내</summary><p id="plan-base"></p>
+            <p class="ins-meta"><a id="plan-source" target="_blank" rel="noopener noreferrer">보험사 상품 안내</a> · <span id="plan-date"></span> 확인</p>
+          </details>
           <section class="plan-summary"><h3>상담용 구성안</h3><p id="plan-summary-name"></p>
             <ul id="plan-summary-riders" aria-live="polite"></ul>
             <p class="ins-meta">가입 가능 여부와 보험료는 보험사가 가입 조건과 선택한 조합을 확인한 뒤 결정합니다.</p>
