@@ -10,6 +10,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mountInsurance } from "./insurance.js";
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ app.use(express.json({ limit: "1mb" }));
 
 // 정적 프론트엔드 호스팅 (../public)
 app.use(express.static(path.join(__dirname, "..", "public")));
+mountInsurance(app, verifySupabaseToken);
 
 // 헬스 체크
 app.get("/api/health", (req, res) => {
