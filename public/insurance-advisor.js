@@ -77,6 +77,12 @@
         make("p", "포함 이유 · " + required.map(c => COVERAGE_CATEGORIES[c]).join(", ")),
         make("p", "근거 · " + p.review.note), evidenceLink("판매 자료", p.review.saleUrl), " · ", evidenceLink("담보 자료", p.review.coverUrl));
       list.append(li);
+      if (combinations(p.review, p).length) {
+        const build = make("button", "이 상품의 주계약과 특약 선택");
+        build.type = "button";
+        build.dataset.openPlan = "local-" + p.id;
+        li.append(document.createElement("br"), build);
+      }
     }
   }
 
@@ -93,9 +99,48 @@
     el("review-sale-url").value = r.saleUrl || "";
     el("review-cover-url").value = r.coverUrl || "";
     el("review-note").value = r.note || "";
+    el("review-combinations").replaceChildren();
+    for (const option of combinations(r, p)) addCombination(option);
     for (const box of covers) box.checked = Array.isArray(r.covers) && r.covers.includes(box.value);
     feedback.textContent = "";
   }
+  function combinations(review, product) {
+    const data = review.plan;
+    if (!product || !data || data.name !== product.name || data.insurer !== product.insurer || !Array.isArray(data.options)) return [];
+    return data.options.filter(o => Array.isArray(o?.names) && o.names.length && o.names.every(n => typeof n === "string" && n.trim()) &&
+      typeof o.condition === "string" && o.condition.trim());
+  }
+  function addCombination(option) {
+    const row = document.createElement("fieldset");
+    const label = make("label", "특약명 (한 줄에 하나씩)");
+    const names = document.createElement("textarea");
+    names.rows = 2;
+    names.maxLength = 1500;
+    names.required = true;
+    names.value = option?.names.join("\n") || "";
+    label.append(names);
+    const terms = make("label", "가입 조건 및 근거 위치");
+    const input = document.createElement("input");
+    input.maxLength = 500;
+    input.required = true;
+    input.value = option?.condition || "";
+    terms.append(input);
+    const remove = make("button", "조합 삭제");
+    remove.type = "button";
+    remove.onclick = () => row.remove();
+    row.append(label, terms, remove);
+    el("review-combinations").append(row);
+  }
+  el("review-add-combination").onclick = () => addCombination();
+
+  window.getReviewedInsurancePlans = () => loadProducts().filter(p => documented(p) &&
+    (!p.review.end || (dated(p.review.end) && p.review.end >= today())) && combinations(p.review, p).length)
+    .map(p => ({
+      id: "local-" + p.id, insurer: p.insurer, name: p.name, version: "설계사 검토 자료",
+      base: p.review.note, checked: p.review.date, url: publicLink(p.review.coverUrl), exclusive: true,
+      options: combinations(p.review, p).map((option, i) => ({ ...option, id: String(i) }))
+    }));
+
   function listRecords(id = "") {
     record.replaceChildren(new Option("새 상품 등록", ""));
     for (const p of loadProducts()) record.add(new Option([p.insurer, p.name].filter(Boolean).join(" · "), p.id));
@@ -114,6 +159,20 @@
     const review = { sale: el("review-sale").value, date: el("review-date").value, end: el("review-end").value, covers: selected(covers),
       saleUrl: el("review-sale-url").value.trim(), coverUrl: el("review-cover-url").value.trim(), note: el("review-note").value.trim() };
     const p = { ...old, id: old?.id || crypto.randomUUID(), name, insurer, review };
+    const rows = [...el("review-combinations").children];
+    if (rows.length && old && (old.name !== name || old.insurer !== insurer)) {
+      feedback.textContent = "보험사나 상품 버전이 바뀌면 기존 특약 조합을 삭제하고 상품을 저장한 뒤 새 조합을 등록하세요.";
+      return;
+    }
+    const options = rows.map(row => ({
+      names: [...new Set(row.querySelector("textarea").value.split(/\r?\n/).map(n => n.trim()).filter(Boolean))],
+      condition: row.querySelector("input").value.trim()
+    }));
+    if (options.some(o => !o.names.length || !o.condition) || (options.length && !publicLink(review.coverUrl))) {
+      feedback.textContent = "각 조합의 특약명, 가입 조건, HTTPS 담보 근거 링크를 입력하세요.";
+      return;
+    }
+    if (options.length) review.plan = { name, insurer, options };
     if (!name || !insurer || !dated(review.date) || review.date > today() || (review.sale === "active" && !documented(p))) {
       feedback.textContent = "판매 중인 후보에는 보험사·상품명, 확인한 담보, 확인일, HTTPS 근거 링크 두 곳과 근거 위치가 필요합니다. 판매·담보가 같은 문서라면 같은 링크를 사용할 수 있습니다.";
       return;

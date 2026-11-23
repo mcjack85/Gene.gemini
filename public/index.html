@@ -270,6 +270,7 @@
 
           <button type="button" data-customer-insurance class="w-full py-2.5 bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">고객용 · 관심 담보로 상품 찾기</button>
           <button type="button" data-advisor-insurance class="w-full py-2.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">설계사용 · 상담 후보 검토</button>
+          <button type="button" data-open-plan class="w-full py-2.5 bg-emerald-800 text-white font-bold rounded-xl text-xs">보험 설계 · 주계약과 특약 선택</button>
           <button type="button" id="btn-open-match" data-open-insurance class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
@@ -2429,6 +2430,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
     </div>
     <div class="ins-body">
       <section id="ins-list">
+        <button type="button" data-open-plan>특약 자료가 있는 상품으로 설계</button>
         <form id="ins-form">
           <label>조회 자료<select id="ins-source">
             <option value="kdic">예금자보호 대상 상품</option>
@@ -2453,6 +2455,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
     <div class="ins-header"><h2 id="advisor-title">설계사용 · 상담 후보 검토</h2><button type="button" id="advisor-close" aria-label="상담 후보 검토 닫기">닫기</button></div>
     <div class="ins-body">
       <fieldset><legend>고객이 상담에서 요청한 담보</legend><div id="advisor-needs" class="review-choices"></div></fieldset>
+      <button type="button" data-open-plan>보험 설계 · 주계약과 특약 선택</button>
       <p id="advisor-status" role="status"></p><ul id="advisor-results"></ul>
       <details id="advisor-editor"><summary>상품 자료 등록·검토</summary>
         <p>이 브라우저에 저장합니다. 보험사의 판매 안내와 담보 근거를 확인한 뒤 기록하세요.</p>
@@ -2467,12 +2470,41 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
           <label>판매 근거 URL<input id="review-sale-url" type="url" placeholder="https://" maxlength="1200"></label>
           <label>담보 근거 URL<input id="review-cover-url" type="url" placeholder="https://" maxlength="1200"></label>
           <label>근거 위치 및 조건<input id="review-note" placeholder="약관 조항 또는 상품 안내의 담보명 · 특약 여부" maxlength="350"></label>
+          <fieldset><legend>이 주계약에 붙일 수 있는 특약 조합</legend>
+            <p class="ins-meta">담보 근거 문서에서 함께 가입할 수 있다고 확인한 특약을 한 조합에 입력하세요. 구성 화면에서는 등록한 조합 중 하나를 고릅니다.</p>
+            <div id="review-combinations"></div>
+            <button type="button" id="review-add-combination">특약 조합 추가</button>
+          </fieldset>
           <button class="ins-primary" type="submit">검토 기록 저장</button>
           <p id="review-status" role="status"></p>
         </form>
       </details>
     </div>
   </dialog>
+  <dialog id="plan-dialog" aria-labelledby="plan-title">
+    <div class="ins-header"><h2 id="plan-title">보험 설계 · 주계약과 특약</h2><button id="plan-close" type="button">닫기</button></div>
+    <div class="ins-body plan-body">
+      <p id="plan-status" role="status"></p>
+      <button type="button" id="plan-retry" hidden>다시 불러오기</button>
+      <div id="plan-fields" hidden>
+        <div class="plan-selects">
+          <label>보험사<select id="plan-insurer"></select></label>
+          <label>주계약 · 상품 유형<select id="plan-product"></select></label>
+        </div>
+        <section id="plan-config" hidden>
+          <h3>주계약</h3><p id="plan-base"></p>
+          <p class="ins-meta"><a id="plan-source" target="_blank" rel="noopener noreferrer">보험사 상품 안내</a> · <span id="plan-date"></span> 확인</p>
+          <fieldset><legend>추가할 특약</legend><div id="plan-options"></div></fieldset>
+          <section class="plan-summary"><h3>상담용 구성안</h3><p id="plan-summary-name"></p>
+            <ul id="plan-summary-riders" aria-live="polite"></ul>
+            <p class="ins-meta">가입 가능 여부와 보험료는 보험사가 가입 조건과 선택한 조합을 확인한 뒤 결정합니다.</p>
+            <button type="button" id="plan-download" class="ins-primary">구성안 내려받기</button>
+          </section>
+        </section>
+      </div>
+    </div>
+  </dialog>
+  <script src="insurance-plan.js"></script>
   <script src="insurance.js"></script>
   <script src="insurance-advisor.js"></script>
 </body>

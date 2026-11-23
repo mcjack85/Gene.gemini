@@ -97,6 +97,13 @@
       const p = data.product;
       message.remove();
       detail.append(node("h3", p.name), node("p", [p.insurer, p.sector, p.type].filter(Boolean).join(" · "), "ins-meta"));
+      if (data.planId) {
+        const build = node("button", "이 상품의 주계약과 특약 선택", "ins-primary");
+        build.dataset.openPlan = data.planId;
+        detail.append(build);
+      } else {
+        detail.append(node("p", "이 공시상품에 연결된 특약 구성 자료가 없습니다.", "ins-meta"));
+      }
       if (p.source === "medical") {
         detail.append(node("p", "공시 기준일 " + p.asOf));
         showRates(p.rates);
