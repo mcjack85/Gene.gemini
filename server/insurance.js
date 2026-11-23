@@ -1,4 +1,5 @@
 import express from "express";
+import { plans, planForDisclosure } from "./insurance-plans.js";
 import pg from "pg";
 import { PublicationError, sources } from "./insurance-sources.js";
 
@@ -93,6 +94,7 @@ export function createInsuranceRouter(catalog, verify) {
     if (!(await verify(req.headers.authorization)).ok) return res.status(401).json({ error: "로그인 후 다시 조회해 주세요." });
     next();
   });
+  router.get("/plans", (_req, res) => res.json({ plans }));
   router.get("/products", (req, res) => {
     const { source = "kdic", insurer = "", q = "", coverage = "", page = "1" } = req.query;
     if ([source, insurer, q, page, coverage].some(v => typeof v !== "string" || v.length > 160) || !Object.hasOwn(sources, source) || (coverage && source !== "medical")
@@ -115,7 +117,8 @@ export function createInsuranceRouter(catalog, verify) {
   router.get("/products/:id", (req, res) => {
     for (const [id, entry] of Object.entries(catalog.state)) {
       const product = entry.products.find(p => p.id === req.params.id);
-      if (product) return res.json({ product, fetchedAt: entry.fetchedAt, sourceUrl: sources[id].url, sourceName: sources[id].label });
+      if (product) return res.json({ product, planId: product.stopped ? null : planForDisclosure.get(product.id) || null,
+        fetchedAt: entry.fetchedAt, sourceUrl: sources[id].url, sourceName: sources[id].label });
     }
     res.status(404).json({ error: "상품 목록이 변경되었습니다. 다시 검색해 주세요." });
   });

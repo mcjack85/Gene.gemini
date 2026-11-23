@@ -65,6 +65,25 @@ test("an incomplete refresh preserves the prior collection and retries after the
   assert.equal(catalog.state.kdic.status, "ready");
 });
 
+test("only reviewed disclosures link to rider plans, and stopped versions have no link", async t => {
+  const catalog = createCatalog({});
+  const reviewed = { id: "677279e22f8cbb0d95594819e268a28e", name: "다이렉트 실손의료비보험2605(CM)" };
+  catalog.state.medical.products = [reviewed, { ...reviewed, id: "another-version" }];
+  const app = express();
+  app.use(createInsuranceRouter(catalog, async () => ({ ok: true })));
+  const server = await new Promise(resolve => {
+    const listener = app.listen(0, "127.0.0.1", () => resolve(listener));
+  });
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const read = path => fetch("http://127.0.0.1:" + server.address().port + path).then(r => r.json());
+  const { plans } = await read("/plans");
+  const { planId } = await read("/products/" + reviewed.id);
+  assert.equal(plans.find(p => p.id === planId).insurer, "DB손해보험");
+  assert.equal((await read("/products/another-version")).planId, null);
+  reviewed.stopped = "2026-11-01";
+  assert.equal((await read("/products/" + reviewed.id)).planId, null);
+});
+
 test("missing key exposes an unconfigured state without contacting an upstream service", async () => {
   const catalog = createCatalog({ fetcher: () => assert.fail("unexpected fetch") });
   await catalog.refresh();
