@@ -7,6 +7,7 @@
   const status = el("plan-status");
   let catalog = [];
   let active;
+  let company;
   let requestedId;
   let request = 0;
 
@@ -25,11 +26,12 @@
     }));
   }
 
-  function displayProduct() {
-    active = catalog.find(row => row.id === product.value && row.insurer === insurer.value);
+  function displayProduct(plan) {
+    active = plan;
     options.replaceChildren();
     el("plan-config").hidden = !active;
     if (!active) return;
+    el("plan-config").querySelector("details").open = false;
     el("plan-base").textContent = active.base;
     el("plan-date").textContent = active.checked;
     el("plan-source").href = active.url;
@@ -61,13 +63,33 @@
     displaySummary();
   }
 
-  function listProducts() {
-    product.replaceChildren(new Option("주계약 선택", ""));
-    for (const p of catalog.filter(row => row.insurer === insurer.value)) {
-      product.add(new Option(p.name + " · " + p.version, p.id));
+  function choice(label, value, detail) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.value = value;
+    button.textContent = label;
+    button.setAttribute("aria-pressed", "false");
+    if (detail) {
+      const sub = document.createElement("small");
+      sub.textContent = detail;
+      button.append(sub);
     }
-    product.disabled = !insurer.value;
+    return button;
+  }
+  function mark(group, value) {
+    for (const button of group.children) button.setAttribute("aria-pressed", String(button.value === value));
+  }
+  function listProducts(selected) {
+    company = selected;
+    mark(insurer, company);
     displayProduct();
+    const products = catalog.filter(p => p.insurer === company);
+    product.replaceChildren(...products.map(p => choice(p.name, p.id, p.version)));
+    el("plan-product-step").hidden = !products.length;
+  }
+  function selectProduct(id) {
+    mark(product, id);
+    displayProduct(catalog.find(p => p.insurer === company && p.id === id));
   }
 
   async function load() {
@@ -85,13 +107,11 @@
       const { plans } = await res.json();
       if (seq !== request || !dialog.open) return;
       catalog = [...plans, ...window.getReviewedInsurancePlans()];
-      insurer.replaceChildren(new Option("보험사 선택", ""));
       const companies = [...new Set(catalog.map(p => p.insurer))];
-      for (const company of companies) insurer.add(new Option(company, company));
+      insurer.replaceChildren(...companies.map(name => choice(name, name)));
       const preset = catalog.find(p => p.id === requestedId);
-      if (preset) insurer.value = preset.insurer;
-      listProducts();
-      if (preset) { product.value = preset.id; displayProduct(); }
+      listProducts(preset?.insurer);
+      if (preset) selectProduct(preset.id);
       status.textContent = catalog.length
         ? "특약 자료를 확인한 보험사 " + companies.length + "곳 · 주계약 " + catalog.length + "개"
         : "특약 자료를 확인한 상품이 없습니다.";
@@ -110,8 +130,18 @@
     dialog.showModal();
     load();
   });
-  insurer.onchange = listProducts;
-  product.onchange = displayProduct;
+  insurer.onclick = event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.value !== company) listProducts(button.value);
+    el("plan-product-title").focus();
+  };
+  product.onclick = event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (active?.id !== button.value) selectProduct(button.value);
+    el("plan-riders-title").focus();
+  };
   options.onchange = displaySummary;
   el("plan-close").onclick = () => dialog.close();
   el("plan-retry").onclick = load;
