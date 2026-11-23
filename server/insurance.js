@@ -70,22 +70,43 @@ export function createCatalog({ key, db, fetcher = fetch, clock = Date.now }) {
 
 export function createInsuranceRouter(catalog, verify) {
   const router = express.Router();
+  const coverageIndex = new WeakMap();
+  function medicalCoverages(products) {
+    if (!coverageIndex.has(products)) {
+      const names = new Set();
+      const byName = new Map();
+      for (const p of products) {
+        for (const raw of new Set(p.rates.map(r => r.coverage))) {
+          const name = raw?.trim();
+          if (!name) continue;
+          names.add(name);
+          if (!byName.has(name)) byName.set(name, new Set());
+          byName.get(name).add(p.id);
+        }
+      }
+      coverageIndex.set(products, { options: [...names].sort((a,b) => a.localeCompare(b, "ko")), byName });
+    }
+    return coverageIndex.get(products);
+  }
   router.use(async (req, res, next) => {
     res.set("Cache-Control", "no-store");
     if (!(await verify(req.headers.authorization)).ok) return res.status(401).json({ error: "로그인 후 다시 조회해 주세요." });
     next();
   });
   router.get("/products", (req, res) => {
-    const { source = "kdic", insurer = "", q = "", page = "1" } = req.query;
-    if ([source, insurer, q, page].some(v => typeof v !== "string" || v.length > 160) || !Object.hasOwn(sources, source)
+    const { source = "kdic", insurer = "", q = "", coverage = "", page = "1" } = req.query;
+    if ([source, insurer, q, page, coverage].some(v => typeof v !== "string" || v.length > 160) || !Object.hasOwn(sources, source) || (coverage && source !== "medical")
       || !/^[1-9]\d{0,6}$/.test(page)) return res.status(400).json({ error: "검색 조건을 확인해 주세요." });
     const { products, fetchedAt, status } = catalog.state[source];
     const simplify = value => value.replace(/\s+/g, "").toLowerCase();
     const needle = simplify(q);
-    const matches = products.filter(p => (!insurer || p.insurer === insurer) && simplify(p.name).includes(needle));
+    const index = source === "medical" ? medicalCoverages(products) : null;
+    const matches = products.filter(p => (!insurer || p.insurer === insurer) && simplify(p.name).includes(needle)
+      && (!coverage || index.byName.get(coverage)?.has(p.id)));
     const offset = (Number(page) - 1) * 20;
     res.json({
       status, fetchedAt, sourceName: sources[source].label, sourceUrl: sources[source].url,
+      coverages: index?.options,
       insurers: [...new Set(products.map(p => p.insurer))].sort((a, b) => a.localeCompare(b, "ko")),
       total: matches.length, page: Number(page), pageSize: 20,
       products: matches.slice(offset, offset + 20).map(({ rates, ...product }) => product)

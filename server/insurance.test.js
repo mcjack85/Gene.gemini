@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCatalog } from "./insurance.js";
+import express from "express";
+import { createCatalog, createInsuranceRouter } from "./insurance.js";
 
 // Official response shapes, with invented company names and rates for these tests.
 function response(item, page, total = item.length) {
@@ -69,4 +70,24 @@ test("missing key exposes an unconfigured state without contacting an upstream s
   await catalog.refresh();
   assert.equal(catalog.state.kdic.status, "unconfigured");
   assert.equal(catalog.state.medical.fetchedAt, null);
+});
+
+test("customer coverage search uses the disclosed rate rows, including after refresh", async t => {
+  const catalog = createCatalog({});
+  const medical = catalog.state.medical;
+  const product = { id: "1", insurer: "예시", name: "질병급여", rates: [{ coverage: "상해급여" }] };
+  medical.products = [product];
+  const app = express();
+  app.use(createInsuranceRouter(catalog, async () => ({ ok: true })));
+  const server = await new Promise(resolve => {
+    const listener = app.listen(0, "127.0.0.1", () => resolve(listener));
+  });
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const search = coverage => fetch("http://127.0.0.1:" + server.address().port
+    + "/products?" + new URLSearchParams({ source: "medical", coverage })).then(r => r.json());
+  assert.equal((await search("질병급여")).total, 0);
+  assert.deepEqual((await search("상해급여")).coverages, ["상해급여"]);
+  medical.products = [{ ...product, rates: [{ coverage: "질병급여" }] }];
+  assert.equal((await search("상해급여")).total, 0);
+  assert.equal((await search("질병급여")).total, 1);
 });

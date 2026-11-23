@@ -5,6 +5,8 @@
   const insurer = el("ins-insurer"), source = el("ins-source"), query = el("ins-query");
   const status = el("ins-status"), results = el("ins-results"), pages = el("ins-pages");
   const attribution = el("ins-attribution");
+  const interest = el("ins-interest");
+  let customerMode = false;
   let page = 1, request = 0, timer, returnFocus;
 
   function node(tag, text, className) {
@@ -54,6 +56,7 @@
     const coverage = select("담보", [["", "전체 담보"], ...values("coverage")]);
     const age = select("가입 연령", [["", "전체 연령"], ...values("age")]);
     const sex = select("성별", [["", "전체"], ["male", "남성"], ["female", "여성"]]);
+    if (customerMode && interest.value) coverage.value = interest.value;
     function draw() {
       const fields = [["coverage", "담보"], ["age", "연령"], ["male", "남성 보험료"], ["female", "여성 보험료"]]
         .filter(([key]) => !sex.value || !["male", "female"].includes(key) || key === sex.value);
@@ -116,7 +119,9 @@
     attribution.replaceChildren();
     status.textContent = "공시 상품을 불러오는 중…";
     const selected = insurer.value;
+    const selectedCoverage = customerMode ? interest.value : "";
     const params = new URLSearchParams({ source: source.value, insurer: selected, q: query.value.trim(), page: String(page) });
+    if (selectedCoverage) params.set("coverage", selectedCoverage);
     try {
       const data = await read("?" + params);
       if (seq !== request) return;
@@ -124,6 +129,11 @@
       insurer.replaceChildren(new Option("전체 보험사", ""));
       data.insurers.forEach(name => insurer.add(new Option(name, name)));
       insurer.value = selected;
+      if (customerMode) {
+        interest.replaceChildren(new Option("담보 선택", ""), ...(data.coverages || []).map(name => new Option(name, name)));
+        interest.value = selectedCoverage;
+      }
+      const needsChoice = customerMode && !interest.value;
       const notices = {
         unconfigured: "공공데이터 인증키 설정이 필요합니다.",
         loading: "공시 자료를 갱신하고 있습니다.",
@@ -131,9 +141,9 @@
       };
       const messages = [notices[data.status]];
       if (data.fetchedAt && data.status !== "ready") messages.push("마지막으로 수집한 자료를 표시합니다.");
-      if (data.fetchedAt) messages.push(data.total ? data.total.toLocaleString("ko-KR") + "개 상품" : "검색 결과가 없습니다.");
+      if (data.fetchedAt) messages.push(needsChoice ? "관심 담보를 선택하면 해당 담보가 공시된 상품을 볼 수 있습니다." : data.total ? data.total.toLocaleString("ko-KR") + "개 상품" : "검색 결과가 없습니다.");
       status.textContent = messages.filter(Boolean).join(" ");
-      for (const p of data.products) {
+      for (const p of needsChoice ? [] : data.products) {
         const li = node("li"), button = node("button");
         button.append(node("strong", p.name), node("small", [p.insurer, p.type, p.asOf && "기준일 " + p.asOf, p.stopped && "판매중단 " + p.stopped].filter(Boolean).join(" · ")));
         button.onclick = () => showDetail(p, button);
@@ -141,7 +151,7 @@
         results.append(li);
       }
       const last = Math.ceil(data.total / data.pageSize);
-      pages.hidden = last <= 1;
+      pages.hidden = needsChoice || last <= 1;
       el("ins-page").textContent = page + " / " + last;
       el("ins-prev").disabled = page <= 1;
       el("ins-next").disabled = page >= last;
@@ -154,10 +164,22 @@
   el("ins-form").onsubmit = e => { e.preventDefault(); firstPage(); };
   source.onchange = () => { insurer.value = ""; firstPage(); };
   insurer.onchange = firstPage;
+  interest.onchange = firstPage;
   el("ins-prev").onclick = () => { page--; search(); };
   el("ins-next").onclick = () => { page++; search(); };
-  for (const button of document.querySelectorAll("[data-open-insurance]")) {
-    button.onclick = () => { dialog.showModal(); firstPage(); };
+  for (const button of document.querySelectorAll("[data-open-insurance], [data-customer-insurance]")) {
+    button.onclick = () => {
+      customerMode = button.hasAttribute("data-customer-insurance");
+      el("insurance-title").textContent = customerMode ? "고객용 · 관심 담보로 상품 찾기" : "보험사별 공시 상품 조회";
+      source.value = customerMode ? "medical" : "kdic";
+      source.parentElement.hidden = customerMode;
+      el("ins-interest-label").hidden = !customerMode;
+      interest.replaceChildren(new Option("담보 선택", ""));
+      insurer.value = "";
+      query.value = "";
+      dialog.showModal();
+      firstPage();
+    };
   }
   el("ins-close").onclick = () => dialog.close();
   dialog.onclose = () => { ++request; clearTimeout(timer); };

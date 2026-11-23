@@ -231,7 +231,7 @@
           </label>
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="opt-include-insurance" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
-            <span id="opt-insurance-label">20년납 비갱신 맞춤 보험 보장분석 포트폴리오 (여성 질환 특화)</span>
+            <span id="opt-insurance-label">관심 보장과 보험 공시 확인 방법</span>
           </label>
         </div>
 
@@ -268,12 +268,13 @@
             </button>
           </div>
 
+          <button type="button" data-customer-insurance class="w-full py-2.5 bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">고객용 · 관심 담보로 상품 찾기</button>
           <button type="button" data-open-insurance class="w-full py-2.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded-xl border border-emerald-300 text-xs">보험사별 공시 상품 조회</button>
-          <button id="btn-open-match" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+          <button id="btn-open-match" data-advisor-insurance class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
             </svg>
-            <span>변이 맞춤 보험상품 매칭 보기</span>
+            <span>설계사용 · 상담 후보 검토</span>
           </button>
 
           <p class="text-[11px] text-slate-400 text-center leading-relaxed">
@@ -327,6 +328,10 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       </div>
 
       <div class="p-6 overflow-y-auto space-y-6 text-sm" id="sim-content"></div>
+      <div class="review-actions">
+        <button type="button" data-customer-insurance>고객용 · 관심 담보로 상품 찾기</button>
+        <button type="button" data-advisor-insurance>설계사용 · 상담 후보 검토</button>
+      </div>
 
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <p class="text-xs text-slate-500 flex-1">결과를 확인한 뒤 저장하거나 프롬프트를 복사해 심층 질문을 진행하세요.</p>
@@ -388,12 +393,13 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       <div class="px-6 py-4 bg-emerald-700 text-white flex items-center justify-between">
         <div>
           <h3 class="text-base font-bold">보험상품 관리 (여러 보험사)</h3>
-          <p class="text-xs text-emerald-100 mt-0.5">실제 취급 상품을 등록하면 변이 프로필에 맞춰 매칭됩니다. (가짜 상품은 생성하지 않습니다)</p>
+          <p class="text-xs text-emerald-100 mt-0.5">상품을 등록한 뒤 설계사용 화면에서 담보와 판매 근거를 확인하세요.</p>
         </div>
         <button id="btn-close-products" class="text-emerald-200 hover:text-white text-lg font-bold">✕</button>
       </div>
 
       <div class="p-5 overflow-y-auto space-y-5">
+        <button type="button" data-advisor-insurance class="px-4 py-2 border rounded-lg">설계사용 · 상담 후보 검토</button>
         <!-- 업로드/추가 영역 -->
         <button type="button" data-open-insurance class="px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg text-sm font-semibold">보험사별 공시 상품 조회</button>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,20 +447,6 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
           <div id="products-list" class="space-y-2"></div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- 보험 매칭 결과 모달 -->
-  <div id="match-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-        <div>
-          <h3 class="text-base font-bold">변이 맞춤 보험상품 매칭</h3>
-          <p class="text-xs text-slate-300 mt-0.5">현재 체크된 변이에서 필요한 담보를 도출해, 등록된 실제 상품을 점수순으로 보여줍니다.</p>
-        </div>
-        <button id="btn-close-match" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
-      </div>
-      <div id="match-content" class="p-5 overflow-y-auto space-y-4 text-sm"></div>
     </div>
   </div>
 
@@ -1405,26 +1397,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       }
 
       if (incInsurance) {
-        const m = matchProducts();
-        prompt += `5. **유전자 변이 기반 맞춤 보험 설계 포트폴리오**\n`;
-        prompt += `   - 변이에서 도출된 우선 필요 담보: ${m.neededCats.map(c => COVERAGE_CATEGORIES[c]).join(", ") || "없음"}\n`;
-
-        if (m.scored.length > 0) {
-          // 등록된 실제 상품을 근거로 제공 (지어내기 금지)
-          prompt += `   - 아래는 상담사가 등록한 "실제 취급 상품" 목록입니다. 반드시 이 목록 안에서만 추천하고, 목록에 없는 상품명·보험료·수치는 절대 지어내지 마세요.\n`;
-          prompt += `   [등록 상품 후보 (적합도 높은 순)]\n`;
-          m.scored.slice(0, 8).forEach((p, i) => {
-            prompt += `     ${i+1}. ${p.insurer || ""} / ${p.name || ""} — 커버 담보: ${p.covered.map(c => COVERAGE_CATEGORIES[c]).join(", ")}${p.payment ? " / " + p.payment : ""}${p.amount ? " / 권장 " + p.amount : ""}\n`;
-          });
-          if (m.gaps.length > 0) {
-            prompt += `   - 미충족 담보(등록 상품으로 커버 안 됨): ${m.gaps.map(c => COVERAGE_CATEGORIES[c]).join(", ")} → 이 빈틈을 명확히 안내.\n`;
-          }
-          prompt += `   - 위 등록 상품을 고객 변이 프로필에 맞춰 "왜 적합한지"를 마크다운 표(보험사·상품명·커버 담보·추천 이유)로 정리. 등록 목록 밖 상품은 언급 금지.\n`;
-        } else {
-          // 등록 상품이 없으면 일반 담보 유형 가이드 (특정 상품명 금지)
-          prompt += `   - (등록된 실제 상품이 없으므로) 특정 상품명 없이, 필요한 "담보 유형"과 권장 가입금액 방향만 표로 제시. 실제 상품명·보험료는 지어내지 말 것.\n`;
-        }
-        prompt += `   - 고객 대면 상담 시 불안을 덜어주고 신뢰를 주는 핵심 화법 팁 포함.\n`;
+        prompt += "5. 보험 조회 안내\n   - 고객이 직접 관심 담보를 선택해 공시 기준일과 보장 범위를 확인하는 방법을 안내하세요. 유전자 검사 결과로 상품 추천, 가입 가능성, 가입금액 또는 보험료를 판단하지 마세요.\n";
       }
 
       const promptOut = document.getElementById("prompt-output");
@@ -1596,7 +1569,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       set("gender-badge", isFemale ? "여성 검사 모드" : "남성 검사 모드");
       set("prompt-gender-badge", isFemale ? "여성 리포트 모드" : "남성 리포트 모드");
       set("section-title", `검사항목별 변이상태 체크 (${isFemale ? "여성" : "남성"} 검사 ${GENE_DATABASE.length}항목)`);
-      set("opt-insurance-label", `20년납 비갱신 맞춤 보험 보장분석 포트폴리오 (${isFemale ? "여성" : "남성"} 질환 특화)`);
+      set("opt-insurance-label", "관심 보장과 보험 공시 확인 방법");
       set("batch-modal-title", `유전자 결과 텍스트 일괄 붙여넣기 (${isFemale ? "여성" : "남성"} 검사)`);
       const ui = document.getElementById("user-info");
       if (ui) { if (isFemale && ui.value.includes("남성")) ui.value = "30대 여성"; if (!isFemale && ui.value.includes("여성")) ui.value = "40대 남성"; }
@@ -1739,13 +1712,13 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
           <div class="p-4 rounded-xl border border-blue-200 bg-blue-50/50">
             <h6 class="text-xs font-bold text-blue-900 mb-1">■ 혈압 & 혈관 내피 염증·순환 축</h6>
             <p class="text-xs text-blue-800 leading-relaxed">
-              ACE, AGT, PLCL2, MTHFR 변이 조합은 혈관 수축과 호모시스테인 증가를 유발합니다. 저염 DASH 식단, 활성형 엽산(5-MTHF) 섭취 및 광범위 뇌심혈관 담보 확보가 유효합니다.
+              ACE, AGT, PLCL2, MTHFR 변이 조합은 혈관 수축과 호모시스테인 증가를 유발합니다. 저염 DASH 식단, 활성형 엽산(5-MTHF) 섭취가 언급됩니다.
             </p>
           </div>
         </div>
 
         <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
-          <h6 class="text-xs font-bold text-emerald-900 mb-2">■ 맞춤 솔루션 (건강기능식품 & 보험 포트폴리오 가이드)</h6>
+          <h6 class="text-xs font-bold text-emerald-900 mb-2">■ 건강기능식품과 보장 확인</h6>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-emerald-900">
             <div>
               <p class="font-bold mb-1">● 필수 1티어 추천 영양제:</p>
@@ -1756,12 +1729,8 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
               </ul>
             </div>
             <div>
-              <p class="font-bold mb-1">● 20년납 비갱신 추천 보험 담보:</p>
-              <ul class="list-disc list-inside space-y-0.5 text-slate-700">
-                <li>부위별 통합 일반암 진단비 (4~5천만원)</li>
-                <li>표적항암치료비 및 암 주요치료비 (통합치료비)</li>
-                <li>뇌혈관/허혈성심장질환 진단비 & 2대 산정특례</li>
-              </ul>
+              <p class="font-bold mb-1">관심 보장 확인</p>
+              <p>아래 고객용 상품 찾기에서 궁금한 담보를 직접 선택하세요.</p>
             </div>
           </div>
         </div>
@@ -1987,6 +1956,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
 
     // 담보 카테고리(표준) — 매칭의 기준
     const COVERAGE_CATEGORIES = {
+      medical:         "실손의료비",
       cancer_general:  "일반암 진단비",
       cancer_targeted: "표적항암·항암치료비",
       cancer_minor:    "유사암·소액암",
@@ -2020,42 +1990,17 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       return [...keys];
     }
 
-    // 변이 유전자 → 필요한 담보 카테고리 (가중치: 동형2, 이형1)
-    function computeCoverageNeeds() {
-      const needs = {}; // key -> score
-      function add(cat, w) { needs[cat] = (needs[cat] || 0) + w; }
-      GENE_DATABASE.forEach(gene => {
-        const lvl = currentSelectedLevels[gene.id];
-        if (lvl !== "HETERO" && lvl !== "HOMO") return;
-        const w = lvl === "HOMO" ? 2 : 1;
-        const id = gene.id.toUpperCase();
-        switch (gene.category) {
-          case "CANCER":
-            add("cancer_general", w); add("cancer_targeted", w); add("cancer_minor", Math.ceil(w/2)); add("surgery", Math.ceil(w/2));
-            break;
-          case "CARDIO":
-            add("cerebro", w); add("cardiac", w); add("surgery", Math.ceil(w/2));
-            break;
-          case "DETOX":
-            add("liver", w); add("surgery", Math.ceil(w/2)); add("hospital", Math.ceil(w/2));
-            break;
-          case "METABOLISM":
-            if (id.includes("APOE")) { add("dementia", w); add("hospital", Math.ceil(w/2)); }
-            else if (/(SLC30A8|KCNQ1|FABP2|ADIPOQ)/.test(id)) { add("diabetes", w); add("hospital", Math.ceil(w/2)); }
-            else add("hospital", w);
-            break;
-        }
-      });
-      return needs; // {cat: score}
-    }
-
     // ── 상품 저장소 (localStorage; 로그인 시 Supabase 확장 예정) ──
     const PRODUCTS_KEY = "insurance_products_v1";
     function loadProducts() {
-      try { return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]"); } catch { return []; }
+      try {
+        const rows = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "[]");
+        return Array.isArray(rows) ? rows.filter(p => p && typeof p === "object") : [];
+      } catch { return []; }
     }
     function saveProducts(list) {
-      try { localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list)); } catch (e) { console.warn(e); }
+      try { localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list)); return true; }
+      catch (e) { console.warn(e); return false; }
     }
     function addProduct(p) {
       const list = loadProducts();
@@ -2074,105 +2019,27 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       }
       box.innerHTML = "";
       list.forEach(p => {
-        const chips = (p.coverages || []).map(c => `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${COVERAGE_CATEGORIES[c] || c}</span>`).join(" ");
         const row = document.createElement("div");
         row.className = "p-3 rounded-xl border border-slate-200 flex items-start justify-between gap-3";
-        row.innerHTML = `
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-500">${p.insurer || "-"}</span>
-              <span class="text-sm font-bold text-slate-900">${p.name || "(상품명 없음)"}</span>
-              ${p.payment ? `<span class="text-[10px] text-slate-400">${p.payment}</span>` : ""}
-            </div>
-            <div class="mt-1 flex flex-wrap gap-1">${chips || '<span class="text-[10px] text-rose-400">담보 인식 안 됨</span>'}</div>
-            ${p.amount ? `<p class="text-[11px] text-slate-400 mt-1">권장 가입금액: ${p.amount}</p>` : ""}
-          </div>
-          <button data-del="${p.id}" class="text-xs text-slate-400 hover:text-rose-600 shrink-0">삭제</button>`;
+        const details = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = [p.insurer, p.name].filter(Boolean).join(" · ");
+        const tags = document.createElement("p");
+        const keys = Array.isArray(p.coverages) ? p.coverages : [];
+        tags.textContent = keys.map(c => COVERAGE_CATEGORIES[c] || c).join(" · ") || "담보 확인 필요";
+        const terms = document.createElement("small");
+        terms.textContent = [p.payment, p.amount && "권장 가입금액 " + p.amount].filter(Boolean).join(" · ");
+        details.append(title, tags, terms);
+        const remove = document.createElement("button");
+        remove.textContent = "삭제";
+        remove.className = "text-xs text-slate-500";
+        remove.onclick = () => {
+          saveProducts(loadProducts().filter(x => x.id !== p.id));
+          renderProductsList();
+        };
+        row.append(details, remove);
         box.appendChild(row);
       });
-      box.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
-        saveProducts(loadProducts().filter(x => x.id !== b.dataset.del));
-        renderProductsList();
-      }));
-    }
-
-    // ── 매칭 + 결과 렌더 ──
-    function matchProducts() {
-      const needs = computeCoverageNeeds();
-      const neededCats = Object.keys(needs).sort((a,b) => needs[b] - needs[a]);
-      const products = loadProducts();
-      const scored = products.map(p => {
-        const covered = (p.coverages || []).filter(c => needs[c]);
-        const score = covered.reduce((s,c) => s + needs[c], 0);
-        return { ...p, covered, score };
-      }).filter(p => p.score > 0).sort((a,b) => b.score - a.score);
-      const coveredSet = new Set(scored.flatMap(p => p.covered));
-      const gaps = neededCats.filter(c => !coveredSet.has(c));
-      return { needs, neededCats, scored, gaps, totalProducts: products.length };
-    }
-
-    function renderMatch() {
-      const el = document.getElementById("match-content");
-      const { needs, neededCats, scored, gaps, totalProducts } = matchProducts();
-
-      if (neededCats.length === 0) {
-        el.innerHTML = `<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">감지된 변이가 없습니다. 유전자 상태를 먼저 체크하세요.</div>`;
-        return;
-      }
-
-      const needChips = neededCats.map(c =>
-        `<span class="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">${COVERAGE_CATEGORIES[c]} <span class="text-indigo-400">·${needs[c]}</span></span>`).join(" ");
-
-      let html = `
-        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-          <h4 class="text-sm font-bold text-indigo-950 mb-2">변이에서 도출된 필요 담보 (우선순위順)</h4>
-          <div class="flex flex-wrap gap-1.5">${needChips}</div>
-        </div>`;
-
-      if (totalProducts === 0) {
-        html += `<div class="p-5 text-center text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl">
-          등록된 보험상품이 없습니다. 상단 <strong>「보험상품 관리」</strong>에서 실제 상품을 먼저 등록하세요.</div>`;
-        el.innerHTML = html;
-        return;
-      }
-
-      if (scored.length === 0) {
-        html += `<div class="p-5 text-center text-sm text-slate-500 bg-slate-50 border rounded-xl">등록된 상품 중 이 변이 담보와 겹치는 상품이 없습니다.</div>`;
-      } else {
-        html += `<div class="space-y-2.5">`;
-        scored.forEach((p, i) => {
-          const maxScore = scored[0].score || 1;
-          const pct = Math.round((p.score / maxScore) * 100);
-          const coveredChips = p.covered.map(c => `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">${COVERAGE_CATEGORIES[c]}</span>`).join(" ");
-          html += `
-            <div class="p-3.5 rounded-xl border ${i===0?'border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/40':'border-slate-200'} ">
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                  ${i===0?'<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">BEST</span>':`<span class="text-[10px] font-bold text-slate-400">#${i+1}</span>`}
-                  <span class="text-xs font-bold text-slate-500">${p.insurer||'-'}</span>
-                  <span class="text-sm font-bold text-slate-900">${p.name||''}</span>
-                </div>
-                <span class="text-xs font-mono font-bold text-emerald-700">적합도 ${pct}%</span>
-              </div>
-              <div class="flex flex-wrap gap-1 mb-1">${coveredChips}</div>
-              ${p.payment||p.amount ? `<p class="text-[11px] text-slate-400">${[p.payment,p.amount?('권장 '+p.amount):''].filter(Boolean).join(' · ')}</p>`:''}
-            </div>`;
-        });
-        html += `</div>`;
-      }
-
-      if (gaps.length > 0) {
-        const gapChips = gaps.map(c => `<span class="text-xs px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold">${COVERAGE_CATEGORIES[c]}</span>`).join(" ");
-        html += `
-          <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
-            <h4 class="text-sm font-bold text-rose-900 mb-1.5">⚠ 미충족 담보 (등록 상품으로 커버 안 됨)</h4>
-            <div class="flex flex-wrap gap-1.5">${gapChips}</div>
-            <p class="text-[11px] text-rose-600 mt-2">이 담보를 포함하는 상품을 추가 등록하면 빈틈이 메워집니다.</p>
-          </div>`;
-      }
-
-      html += `<p class="text-[11px] text-slate-400 text-center pt-1">※ 본 매칭은 등록된 실제 상품에 한하며, 최종 가입 권유는 등록된 설계사의 판단과 책임하에 이루어져야 합니다.</p>`;
-      el.innerHTML = html;
     }
 
     // 엑셀/CSV 파싱
@@ -2255,6 +2122,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
               coverages: Array.isArray(p.coverages) ? p.coverages : parseCoverageTokens(p.coverages||""),
               payment: String(p.payment||"").trim(),
               amount: String(p.amount||"").trim(),
+              review: p.review && typeof p.review === "object" ? p.review : undefined,
               note: String(p.note||"").trim()
             };
             cur.push(item); added++;
@@ -2440,8 +2308,6 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       const btnClearProducts = document.getElementById("btn-clear-products");
       const btnDownloadTpl = document.getElementById("btn-download-template");
       const productFile = document.getElementById("product-file");
-      const btnOpenMatch = document.getElementById("btn-open-match");
-      const btnCloseMatch = document.getElementById("btn-close-match");
 
       if (btnOpenProducts) btnOpenProducts.addEventListener("click", () => {
         document.getElementById("products-modal").classList.remove("hidden");
@@ -2485,13 +2351,6 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       if (importFile) importFile.addEventListener("change", (e) => {
         if (e.target.files && e.target.files[0]) { importProductsFile(e.target.files[0]); e.target.value = ""; }
       });
-
-      if (btnOpenMatch) btnOpenMatch.addEventListener("click", () => {
-        document.getElementById("match-modal").classList.remove("hidden");
-        renderMatch();
-      });
-      if (btnCloseMatch) btnCloseMatch.addEventListener("click", () =>
-        document.getElementById("match-modal").classList.add("hidden"));
 
       if (closeSimBtn && simModal) closeSimBtn.addEventListener("click", () => simModal.classList.add("hidden"));
       if (copySimPromptBtn && simModal) {
@@ -2575,6 +2434,7 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
             <option value="kdic">예금자보호 대상 상품</option>
             <option value="medical">실손보험 기준 보험료</option>
           </select></label>
+          <label id="ins-interest-label" hidden>관심 담보<select id="ins-interest" aria-label="관심 담보"><option value="">담보 선택</option></select></label>
           <label>보험사<select id="ins-insurer"><option value="">전체 보험사</option></select></label>
           <label>상품명<input id="ins-query" type="search" placeholder="상품명 일부 입력" maxlength="160"></label>
           <button type="submit" class="ins-primary">검색</button>
@@ -2589,6 +2449,31 @@ AGT : TC" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-xl
       <p id="ins-attribution"></p>
     </div>
   </dialog>
+  <dialog id="advisor-dialog" aria-labelledby="advisor-title">
+    <div class="ins-header"><h2 id="advisor-title">설계사용 · 상담 후보 검토</h2><button type="button" id="advisor-close" aria-label="상담 후보 검토 닫기">닫기</button></div>
+    <div class="ins-body">
+      <fieldset><legend>고객이 상담에서 요청한 담보</legend><div id="advisor-needs" class="review-choices"></div></fieldset>
+      <p id="advisor-status" role="status"></p><ul id="advisor-results"></ul>
+      <details id="advisor-editor"><summary>상품 자료 등록·검토</summary>
+        <p>이 브라우저에 저장합니다. 보험사의 판매 안내와 담보 근거를 확인한 뒤 기록하세요.</p>
+        <form id="advisor-form">
+          <label>검토할 상품<select id="review-record"></select></label>
+          <label>보험사<input id="review-insurer" required maxlength="120"></label>
+          <label>상품명 · 버전<input id="review-name" required maxlength="180"></label>
+          <fieldset><legend>자료에서 직접 확인한 담보</legend><div id="review-covers" class="review-choices"></div></fieldset>
+          <label>판매 상태<select id="review-sale" required><option value="">선택</option><option value="active">판매 중</option><option value="stopped">판매 중단</option><option value="unknown">확인 필요</option></select></label>
+          <label>판매·담보 확인일<input id="review-date" required type="date"></label>
+          <label>판매 종료일 (자료에 명시된 경우)<input id="review-end" type="date"></label>
+          <label>판매 근거 URL<input id="review-sale-url" type="url" placeholder="https://" maxlength="1200"></label>
+          <label>담보 근거 URL<input id="review-cover-url" type="url" placeholder="https://" maxlength="1200"></label>
+          <label>근거 위치 및 조건<input id="review-note" placeholder="약관 조항 또는 상품 안내의 담보명 · 특약 여부" maxlength="350"></label>
+          <button class="ins-primary" type="submit">검토 기록 저장</button>
+          <p id="review-status" role="status"></p>
+        </form>
+      </details>
+    </div>
+  </dialog>
   <script src="insurance.js"></script>
+  <script src="insurance-advisor.js"></script>
 </body>
 </html>
