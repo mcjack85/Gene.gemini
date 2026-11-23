@@ -56,7 +56,7 @@
     const coverage = select("담보", [["", "전체 담보"], ...values("coverage")]);
     const age = select("가입 연령", [["", "전체 연령"], ...values("age")]);
     const sex = select("성별", [["", "전체"], ["male", "남성"], ["female", "여성"]]);
-    if (customerMode && interest.value) coverage.value = interest.value;
+    if (interest.value) coverage.value = interest.value;
     function draw() {
       const fields = [["coverage", "담보"], ["age", "연령"], ["male", "남성 보험료"], ["female", "여성 보험료"]]
         .filter(([key]) => !sex.value || !["male", "female"].includes(key) || key === sex.value);
@@ -119,7 +119,9 @@
     attribution.replaceChildren();
     status.textContent = "공시 상품을 불러오는 중…";
     const selected = insurer.value;
-    const selectedCoverage = customerMode ? interest.value : "";
+    const medical = source.value === "medical";
+    el("ins-interest-label").hidden = !medical;
+    const selectedCoverage = medical ? interest.value : "";
     const params = new URLSearchParams({ source: source.value, insurer: selected, q: query.value.trim(), page: String(page) });
     if (selectedCoverage) params.set("coverage", selectedCoverage);
     try {
@@ -129,8 +131,8 @@
       insurer.replaceChildren(new Option("전체 보험사", ""));
       data.insurers.forEach(name => insurer.add(new Option(name, name)));
       insurer.value = selected;
-      if (customerMode) {
-        interest.replaceChildren(new Option("담보 선택", ""), ...(data.coverages || []).map(name => new Option(name, name)));
+      if (medical) {
+        interest.replaceChildren(new Option(customerMode ? "담보 선택" : "전체 담보", ""), ...(data.coverages || []).map(name => new Option(name, name)));
         interest.value = selectedCoverage;
       }
       const needsChoice = customerMode && !interest.value;
@@ -162,7 +164,7 @@
   }
   function firstPage() { page = 1; search(); }
   el("ins-form").onsubmit = e => { e.preventDefault(); firstPage(); };
-  source.onchange = () => { insurer.value = ""; firstPage(); };
+  source.onchange = () => { insurer.value = ""; interest.value = ""; firstPage(); };
   insurer.onchange = firstPage;
   interest.onchange = firstPage;
   el("ins-prev").onclick = () => { page--; search(); };
@@ -173,7 +175,6 @@
       el("insurance-title").textContent = customerMode ? "고객용 · 관심 담보로 상품 찾기" : "보험사별 공시 상품 조회";
       source.value = customerMode ? "medical" : "kdic";
       source.parentElement.hidden = customerMode;
-      el("ins-interest-label").hidden = !customerMode;
       interest.replaceChildren(new Option("담보 선택", ""));
       insurer.value = "";
       query.value = "";
